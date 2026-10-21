@@ -160,6 +160,38 @@ $('form').addEventListener('submit',async e=>{
     clearTimeout(timeout);
     busy=false;
     $('send').disabled=false;
+ 
+/* MINIK AI — Gemini xətalarında avtomatik təkrar cəhd */
+(() => {
+  const originalFetch = window.fetch.bind(window);
+
+  window.fetch = async function(input, init) {
+    const url = typeof input === "string"
+      ? input
+      : (input && input.url) || "";
+
+    if (!url.includes("generativelanguage.googleapis.com")) {
+      return originalFetch(input, init);
+    }
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const response = await originalFetch(input, init);
+
+      if (
+        response.ok ||
+        ![429, 500, 502, 503, 504].includes(response.status) ||
+        attempt === 3
+      ) {
+        return response;
+      }
+
+      const delay = 1200 * Math.pow(2, attempt)
+        + Math.random() * 500;
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  };
+})();
   }
 });
 </script>
