@@ -1,69 +1,167 @@
+
 <!doctype html>
 <html lang="az">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#090b18">
 <title>MINIK AI</title>
 <style>
-:root{--bg:#080a16;--panel:#11152a;--panel2:#171d36;--line:#2b3153;--text:#f5f6ff;--muted:#a4accb;--blue:#7c8cff;--cyan:#54e2f2;--violet:#bd7bff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#20265a 0,transparent 38%),radial-gradient(ellipse at 95% 35%,#241748 0,transparent 30%),var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;min-height:100dvh}
-button,input,textarea{font:inherit}button{cursor:pointer;color:inherit}.app{max-width:980px;margin:auto;min-height:100dvh;display:flex;flex-direction:column;padding:14px 14px calc(14px + env(safe-area-inset-bottom))}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px 16px;border-bottom:1px solid #ffffff12}
-.brand{display:flex;align-items:center;gap:11px}.logo{width:48px;height:48px;filter:drop-shadow(0 0 18px #6878ff55);flex:none}.brand h1{font-size:19px;letter-spacing:1.8px;margin:0;font-weight:850}.brand small{display:block;color:var(--muted);font-size:11px;letter-spacing:.7px}
-.top-actions{display:flex;gap:8px}.iconbtn,.secondary{border:1px solid var(--line);background:#ffffff08;border-radius:13px;padding:10px 12px}.iconbtn{font-size:18px}.hero{text-align:center;padding:26px 8px 18px}.orb{width:76px;height:76px;margin:0 auto 14px;border-radius:26px;background:linear-gradient(135deg,#6e81ff,#b66aff 58%,#4de4f2);padding:2px;box-shadow:0 0 48px #7976ff30}.orb-inner{height:100%;border-radius:24px;background:#10142b;display:grid;place-items:center}.orb svg{width:49px}.hero h2{font-size:clamp(24px,5vw,36px);line-height:1.15;margin:0 0 10px;letter-spacing:-.8px}.gradient{background:linear-gradient(90deg,#91a1ff,#df9cff,#70e8f5);color:transparent;background-clip:text}.hero p{color:var(--muted);margin:0 auto;max-width:470px;font-size:14px}
-.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;max-width:660px;margin:10px auto 18px;width:100%}.suggestion{border:1px solid #ffffff15;background:linear-gradient(135deg,#171c36cc,#111426cc);padding:13px;border-radius:17px;text-align:left;min-height:76px;transition:.2s}.suggestion:active{transform:scale(.98)}.suggestion b{display:block;font-size:13px;margin-bottom:3px}.suggestion span{font-size:12px;color:var(--muted)}
-.chat{flex:1;display:flex;flex-direction:column;gap:16px;padding:8px 0 18px}.message{display:flex;gap:10px;align-items:flex-start;max-width:100%;animation:rise .25s ease}.message.user{flex-direction:row-reverse}.avatar{width:32px;height:32px;flex:none;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,#687dff,#b875ff);font-size:12px;font-weight:800}.user .avatar{background:#242b49;border:1px solid #414b79}.bubble{max-width:min(790px,calc(100% - 44px));padding:12px 15px;border:1px solid #ffffff12;border-radius:5px 17px 17px 17px;background:#151a30e8;white-space:pre-wrap;overflow-wrap:anywhere}.user .bubble{background:linear-gradient(135deg,#252b51,#22213f);border-radius:17px 5px 17px 17px}.bubble p{margin:0}.bubble pre{white-space:pre-wrap;overflow-x:auto;background:#080b18;padding:12px;border-radius:10px}.typing{color:var(--muted);font-size:13px}
-.composer-wrap{position:sticky;bottom:0;padding-top:8px;background:linear-gradient(180deg,transparent,var(--bg) 18%)}.composer{display:flex;align-items:flex-end;gap:9px;border:1px solid #515b8a;background:#11152af2;border-radius:22px;padding:10px;box-shadow:0 10px 38px #0005}.composer textarea{resize:none;max-height:150px;min-height:42px;flex:1;background:transparent;color:var(--text);border:0;outline:0;padding:10px 4px;line-height:1.45}.composer textarea::placeholder{color:#8c95b9}.send{width:44px;height:44px;flex:none;border:0;border-radius:15px;background:linear-gradient(135deg,#7588ff,#ae72ff);box-shadow:0 5px 18px #7c72ff45;font-size:20px}.send:disabled{opacity:.45;cursor:default}.foot{text-align:center;color:#737d9e;font-size:10px;padding:10px 0 0}.pill{display:inline-flex;align-items:center;gap:6px;border:1px solid #ffffff15;border-radius:99px;padding:6px 10px;color:#aeb8dc;font-size:11px;margin-top:15px}.dot{width:6px;height:6px;border-radius:50%;background:#61e7bd;box-shadow:0 0 10px #61e7bd}
-.modal-back{position:fixed;inset:0;background:#03040bcc;backdrop-filter:blur(9px);display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal-back.open{display:flex}.modal{width:min(440px,100%);border:1px solid #39416a;border-radius:24px;background:linear-gradient(145deg,#171c37,#0c0f20);padding:22px;box-shadow:0 25px 100px #0009}.modal h3{margin:0 0 6px;font-size:22px}.modal p{color:var(--muted);font-size:13px}.modal label{display:block;margin:16px 0 7px;font-size:12px;color:#c9cfee}.modal input{width:100%;border:1px solid #3b446d;border-radius:12px;padding:13px;background:#080b18;color:white;outline:none}.modal input:focus{border-color:#8a8fff}.modal-actions{display:flex;gap:8px;margin-top:16px}.primary{background:linear-gradient(135deg,#7588ff,#ae72ff);border:0;border-radius:12px;padding:12px 15px;font-weight:750;flex:1}.warn{font-size:11px!important;color:#e4cba1!important}.hidden{display:none!important}
-@keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-@media(min-width:700px){.app{padding:20px 24px}.hero{padding-top:34px}.suggestions{grid-template-columns:repeat(4,minmax(0,1fr))}.suggestion{min-height:104px}.brand h1{font-size:21px}}
-@media(max-width:380px){.app{padding-left:10px;padding-right:10px}.brand h1{font-size:17px}.logo{width:42px;height:42px}.iconbtn{padding:8px 10px}.suggestions{gap:7px}.suggestion{padding:11px}.hero{padding-top:20px}}
+*{box-sizing:border-box}
+body{margin:0;background:#090b18;color:#f5f6ff;font:16px system-ui;min-height:100vh}
+header{padding:18px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #303653}
+h1{margin:0;font-size:23px;color:#9e9cff}
+button{border:0;border-radius:12px;padding:12px;background:#777cff;color:white;font-size:15px}
+main{max-width:760px;margin:auto;padding:16px}
+#welcome{text-align:center;padding:32px 5px}
+#welcome h2{font-size:29px}
+#chat{display:flex;flex-direction:column;gap:12px;padding-bottom:15px}
+.msg{padding:13px 15px;border-radius:15px;background:#171d36;white-space:pre-wrap;overflow-wrap:anywhere}
+.user{background:#29254a;align-self:flex-end;max-width:90%}
+.bot{align-self:stretch}
+form{position:sticky;bottom:0;background:#090b18;padding:10px 0;display:flex;gap:8px}
+textarea{flex:1;min-width:0;resize:vertical;min-height:48px;max-height:140px;border:1px solid #414a70;border-radius:14px;background:#151a30;color:white;padding:13px;font:inherit}
+#send{min-width:58px}
+#status{font-size:12px;color:#aeb8dc;padding:6px 0}
+#settingsPanel{display:none;padding:15px;background:#171d36;border-radius:15px;margin:12px 0}
+#settingsPanel input{width:100%;padding:12px;margin:6px 0 12px;border-radius:10px;border:1px solid #414a70;background:#090b18;color:white}
+small{color:#b3bbd8}
 </style>
 </head>
 <body>
-<div class="app">
-<header class="top">
- <div class="brand">
-  <svg class="logo" viewBox="0 0 64 64" aria-label="MINIK AI logo"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#7f91ff"/><stop offset=".55" stop-color="#c17aff"/><stop offset="1" stop-color="#4ce5f3"/></linearGradient></defs><rect x="3" y="3" width="58" height="58" rx="20" fill="#131832" stroke="url(#g)" stroke-width="2"/><path d="M15 43V21l12 14 5-7 5 7 12-14v22" fill="none" stroke="url(#g)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="22" cy="17" r="2" fill="#aabaff"/><circle cx="43" cy="17" r="2" fill="#7deaf6"/></svg>
-  <div><h1>MINIK <span class="gradient">AI</span></h1><small>SƏNİN AĞILLI KÖMƏKÇİN</small></div>
- </div>
- <div class="top-actions"><button class="iconbtn" id="newChat" title="Yeni söhbət">＋</button><button class="iconbtn" id="settings" title="API ayarları">⚙</button></div>
+<header>
+  <h1>MINIK AI ✦</h1>
+  <button id="settings">⚙ Ayarlar</button>
 </header>
-<section class="hero" id="hero">
- <div class="orb"><div class="orb-inner"><svg viewBox="0 0 64 64" fill="none"><path d="M13 43V21l12 14 7-9 7 9 12-14v22" stroke="url(#lg)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><defs><linearGradient id="lg"><stop stop-color="#94a5ff"/><stop offset="1" stop-color="#65e8f4"/></linearGradient></defs><circle cx="23" cy="17" r="2" fill="#bd8aff"/><circle cx="42" cy="17" r="2" fill="#68e8f4"/></svg></div></div>
- <h2>Salam! Mən <span class="gradient">MINIK AI</span>-yam.</h2><p>Fikirlərini gerçəyə çevirək. Sual ver, öyrən, kod yazdır və yeni ideyalar kəşf et.</p>
- <div class="pill"><span class="dot"></span><span id="status">API açarı gözlənilir</span></div>
-</section>
-<div class="suggestions" id="suggestions">
- <button class="suggestion" data-prompt="Mənə maraqlı və faydalı bir layihə ideyası ver."><b>✦ Yeni ideyalar</b><span>Yaradıcı fikirlər tap</span></button>
- <button class="suggestion" data-prompt="Mənə süni intellekti sadə dildə, nümunələrlə izah et."><b>◈ Öyrənək</b><span>Çətin mövzunu asanlaşdır</span></button>
- <button class="suggestion" data-prompt="Mənə gözəl görünüşlü, mobil uyğun veb səhifə üçün HTML, CSS və JavaScript nümunəsi yaz."><b>⌘ Kod köməkçisi</b><span>Kod yaz və düzəlt</span></button>
- <button class="suggestion" data-prompt="Mənim üçün bu günə uyğun 5 addımlıq məhsuldar plan hazırla."><b>↗ Plan qur</b><span>Fikirlərini nizama sal</span></button>
-</div>
-<main class="chat" id="chat" aria-live="polite"></main>
-<div class="composer-wrap"><div class="composer"><textarea id="prompt" rows="1" placeholder="MINIK AI-yə mesaj yaz..." aria-label="Mesaj"></textarea><button class="send" id="send" aria-label="Göndər">➤</button></div><div class="foot">MINIK AI bəzən səhv edə bilər. Vacib məlumatları yoxla.</div></div>
-</div>
-<div class="modal-back" id="modalBack"><section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><h3 id="modalTitle">⚙ MINIK AI ayarları</h3><p>Gemini API açarını əlavə et və modelini seç.</p><label for="apiKey">Gemini API key</label><input id="apiKey" type="password" placeholder="AIza..." autocomplete="off"><label for="model">Model</label><input id="model" value="gemini-3.8-flash" autocomplete="off"><p class="warn">Təhlükəsizlik: açar bu brauzerin yaddaşında saxlanıla bilər. Bu şəxsi prototip üçündür; açarı paylaşma və ictimai sayta yerləşdirmə.</p><div class="modal-actions"><button class="secondary" id="cancelSettings">Bağla</button><button class="primary" id="saveSettings">Yadda saxla</button></div></section></div>
+<main>
+  <section id="welcome">
+    <h2>Salam! Mən MINIK AI-yam 👋</h2>
+    <p>Sualını yaz, birlikdə həll edək.</p>
+  </section>
+
+  <section id="settingsPanel">
+    <label for="apiKey">Gemini API açarı</label>
+    <input id="apiKey" type="password" placeholder="AIza...">
+    <label for="model">Model adı</label>
+    <input id="model" value="gemini-3.8-flash">
+    <button id="save">Yadda saxla</button>
+    <p><small>Açarı heç kimlə paylaşma və açıq kodda yerləşdirmə.</small></p>
+  </section>
+
+  <div id="status">API açarını ayarlardan əlavə et.</div>
+  <section id="chat" aria-live="polite"></section>
+
+  <form id="form">
+    <textarea id="prompt" placeholder="MINIK AI-yə mesaj yaz..." required></textarea>
+    <button id="send" type="submit">➤</button>
+  </form>
+</main>
 <script>
-const $=s=>document.querySelector(s);
-const chat=$('#chat'), promptBox=$('#prompt'), sendBtn=$('#send'), modal=$('#modalBack');
-let messages=[], busy=false;
-function openSettings(){ $('#apiKey').value=localStorage.getItem('minik_api_key')||''; $('#model').value=localStorage.getItem('minik_model')||'gemini-3.8-flash'; modal.classList.add('open');}
-function updateStatus(){ $('#status').textContent=localStorage.getItem('minik_api_key')?'Hazırdır · Gemini bağlantısı üçün':'API açarı gözlənilir'; }
-function addMessage(role,text){const wrap=document.createElement('div');wrap.className='message '+(role==='user'?'user':'assistant');const av=document.createElement('div');av.className='avatar';av.textContent=role==='user'?'SƏN':'M';const b=document.createElement('div');b.className='bubble';b.textContent=text;wrap.append(av,b);chat.append(wrap);wrap.scrollIntoView({behavior:'smooth',block:'end'});return b;}
-function resize(){promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,150)+'px';}
-async function send(text){text=(text||promptBox.value).trim();if(!text||busy)return;const key=localStorage.getItem('minik_api_key');if(!key){openSettings();return;}$('#hero').classList.add('hidden');$('#suggestions').classList.add('hidden');promptBox.value='';resize();messages.push({role:'user',content:text});addMessage('user',text);const bubble=addMessage('assistant','MINIK AI cavab hazırlayır…');bubble.classList.add('typing');busy=true;sendBtn.disabled=true;
-try{const model=localStorage.getItem('minik_model')||'gemini-3.8-flash';let answer;
-if(window.MinikBridge){answer=await new Promise((resolve,reject)=>{const id='m'+Date.now()+Math.random().toString(16).slice(2);window.__minikPending=window.__minikPending||{};window.__minikPending[id]={resolve,reject};MinikBridge.chat(JSON.stringify({id,key,model,messages}));});}
-else {const contents=messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}));const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({systemInstruction:{parts:[{text:'Sən MINIK AI adlı faydalı, mehriban və dəqiq köməkçisən. İstifadəçinin dilində cavab ver; Azərbaycan dilinə üstünlük ver. Aydın, səmimi və faydalı ol. Bilmədiyini uydurma.'}]},contents,generationConfig:{thinkingConfig:{thinkingLevel:'LOW'}}})});const data=await response.json();if(!response.ok)throw new Error(data.error?.message||'Gemini sorğusu uğursuz oldu ('+response.status+').');answer=data.candidates?.[0]?.content?.parts?.map(p=>p.text||'').join('');}
-if(!answer)throw new Error('Cavab alınmadı. Gemini model adını və API limitini yoxla.');bubble.classList.remove('typing');bubble.textContent=answer;messages.push({role:'assistant',content:answer});
-}catch(e){bubble.classList.remove('typing');bubble.textContent='Bağlantı xətası: '+e.message+'\n\nGemini API açarını, interneti və Google AI Studio-dakı limitləri yoxla. Bir az sonra yenidən cəhd et.';}finally{busy=false;sendBtn.disabled=false;promptBox.focus();}}
-sendBtn.addEventListener('click',()=>send());promptBox.addEventListener('input',resize);promptBox.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});
-document.querySelectorAll('[data-prompt]').forEach(b=>b.addEventListener('click',()=>send(b.dataset.prompt)));
-$('#settings').addEventListener('click',openSettings);$('#cancelSettings').addEventListener('click',()=>modal.classList.remove('open'));
-$('#saveSettings').addEventListener('click',()=>{const key=$('#apiKey').value.trim(),model=$('#model').value.trim()||'gemini-3.8-flash';if(key)localStorage.setItem('minik_api_key',key);else localStorage.removeItem('minik_api_key');localStorage.setItem('minik_model',model);modal.classList.remove('open');updateStatus();});
-$('#newChat').addEventListener('click',()=>{messages=[];chat.innerHTML='';$('#hero').classList.remove('hidden');$('#suggestions').classList.remove('hidden');promptBox.value='';});
-window.onNativeReply=(id,answer,error)=>{const p=window.__minikPending?.[id];if(!p)return;delete window.__minikPending[id];if(error)p.reject(new Error(error));else p.resolve(answer);};
-modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});updateStatus();
+const $=id=>document.getElementById(id);
+let history=[];
+let busy=false;
+
+$('settings').onclick=()=>{
+  $('apiKey').value=localStorage.getItem('minik_api_key')||'';
+  $('model').value=localStorage.getItem('minik_model')||'gemini-3.8-flash';
+  $('settingsPanel').style.display=
+    $('settingsPanel').style.display==='block'?'none':'block';
+};
+
+$('save').onclick=()=>{
+  const key=$('apiKey').value.trim();
+  const model=$('model').value.trim();
+  if(!key){$('status').textContent='API açarını daxil et.';return;}
+  if(!model){$('status').textContent='Model adını daxil et.';return;}
+  localStorage.setItem('minik_api_key',key);
+  localStorage.setItem('minik_model',model);
+  $('settingsPanel').style.display='none';
+  $('status').textContent='Açar saxlanıldı. İndi mesaj göndər.';
+};
+
+function addMessage(text,who){
+  const el=document.createElement('div');
+  el.className='msg '+who;
+  el.textContent=text;
+  $('chat').appendChild(el);
+  el.scrollIntoView({behavior:'smooth',block:'end'});
+  return el;
+}
+
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(busy)return;
+  const text=$('prompt').value.trim();
+  if(!text)return;
+
+  const key=localStorage.getItem('minik_api_key');
+  const model=localStorage.getItem('minik_model')||'gemini-3.8-flash';
+  if(!key){
+    $('settingsPanel').style.display='block';
+    $('status').textContent='Əvvəl Gemini API açarını əlavə et.';
+    return;
+  }
+
+  $('welcome').style.display='none';
+  $('prompt').value='';
+  addMessage(text,'user');
+  const answerBox=addMessage('MINIK AI düşünür…','bot');
+  history.push({role:'user',parts:[{text}]});
+  busy=true;
+  $('send').disabled=true;
+  $('status').textContent='Gemini-yə qoşulur…';
+
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),30000);
+
+  try{
+    const response=await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/'+
+      encodeURIComponent(model)+':generateContent',
+      {
+        method:'POST',
+        headers:{
+          'Content-Type':'application/json',
+          'x-goog-api-key':key
+        },
+        signal:controller.signal,
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:
+            'Sən MINIK AI adlı mehriban və faydalı köməkçisən. '+
+            'İstifadəçinin dilində cavab ver, Azərbaycan dilinə üstünlük ver. '+
+            'Aydın və düzgün cavablar yaz.'}]},
+          contents:history,
+          generationConfig:{maxOutputTokens:800,temperature:0.7}
+        })
+      }
+    );
+
+    const data=await response.json();
+    if(!response.ok){
+      throw new Error(data.error?.message||'HTTP '+response.status);
+    }
+
+    const answer=(data.candidates?.[0]?.content?.parts||[])
+      .map(p=>p.text||'').join('').trim();
+
+    if(!answer)throw new Error('Model boş cavab qaytardı.');
+    answerBox.textContent=answer;
+    history.push({role:'model',parts:[{text:answer}]});
+    $('status').textContent='Cavab hazırdır ✓';
+
+  }catch(err){
+    history.pop();
+    answerBox.textContent=err.name==='AbortError'
+      ?'Sorğu 30 saniyəyə cavab vermədi. İnterneti və modelin əlçatanlığını yoxla.'
+      :'Xəta: '+err.message+
+        '\n\nƏgər Failed to fetch yazılırsa, Chrome bağlantını bloklaya bilər. HTTPS saytını açdığını və interneti yoxla.';
+    $('status').textContent='Sorğu uğursuz oldu.';
+  }finally{
+    clearTimeout(timeout);
+    busy=false;
+    $('send').disabled=false;
+  }
+});
 </script>
-</body></html>
+</body>
+</html>
