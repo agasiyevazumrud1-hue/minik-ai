@@ -7,9 +7,17 @@
 <title>MINIK AI</title>
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#090d19;color:#f4f7ff;font:15px/1.6 system-ui,sans-serif}
-.app{max-width:850px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:15px}
-header{display:flex;justify-content:space-between;align-items:center;padding:10px 0 18px}
+html{min-height:100%;background:#090d19;scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#20264b 0%,#090d19 55%);background-attachment:fixed;color:#f4f7ff;font:15px/1.6 system-ui,sans-serif;min-height:100dvh}
+.app{max-width:850px;margin:auto;height:100dvh;min-height:0;display:flex;flex-direction:column;padding:12px 15px 0}
+header{display:flex;justify-content:space-between;align-items:center;padding:8px 0 14px;flex-shrink:0;gap:10px}
+#chat{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-behavior:smooth;display:flex;flex-direction:column;gap:13px;padding:14px 4px 22px;scrollbar-width:thin;scrollbar-color:#343b58 transparent}
+#chat:empty{flex:0 0 auto}
+#chat .msg{max-width:min(90%,700px);line-height:1.65;box-shadow:0 5px 18px #00000012}
+.composer{position:relative;bottom:auto;flex-shrink:0;border-top:1px solid #ffffff12;background:linear-gradient(180deg,#090d19ee,#090d19);padding:12px 0 calc(10px + env(safe-area-inset-bottom));display:flex;gap:9px;align-items:flex-end}
+#sessionsPanel,#panel{flex-shrink:0;max-height:45dvh;overflow-y:auto}
+@media(max-width:520px){.app{padding:9px 11px 0}header{padding:7px 0 10px}.logo{padding:8px 12px;font-size:20px}.headerActions{gap:5px}.headerActions button{padding:9px 10px;font-size:12px}#chat .msg{max-width:94%;padding:11px 13px}.composer{gap:7px}#welcome{padding:22px 0}#welcome .ask{margin:3px}}
+
 .logo{background:linear-gradient(135deg,#a99aff,#65e5d2);color:#101426;padding:10px 15px;border-radius:15px;font-size:22px;font-weight:bold}
 h2{margin:0;font-size:20px}small{color:#9ba8c7}
 button{cursor:pointer;border:0;border-radius:12px;padding:11px;background:#252d4a;color:white}
@@ -70,7 +78,7 @@ function add(role, text) {
   bubble.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
   bubble.textContent = text;
   chat.appendChild(bubble);
-  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+  scrollChatToBottom();
   return bubble;
 }
 function saveHistory() {
@@ -89,10 +97,14 @@ function saveHistory() {
     renderSessions();
   } catch(e) {}
 }
+function scrollChatToBottom() {
+  requestAnimationFrame(() => { chat.scrollTop = chat.scrollHeight; });
+}
 function renderHistory() {
   chat.innerHTML = '';
   history.forEach(m => add(m.role === 'user' ? 'user' : 'ai', m.content));
   welcome.style.display = history.length ? 'none' : '';
+  scrollChatToBottom();
 }
 function renderSessions() {
   const list = $('sessionList');
@@ -221,6 +233,7 @@ function fastText(bubble, text) {
     index = Math.min(text.length, index + step);
     bubble.textContent = text.slice(0, index);
     if (index < text.length) requestAnimationFrame(tick);
+    else scrollChatToBottom();
   }
   tick();
 }
@@ -254,6 +267,7 @@ async function sendMessage(text) {
     history.pop(); saveHistory();
   } finally {
     busy = false; $('send').disabled = false; promptBox.disabled = false; promptBox.focus();
+    scrollChatToBottom();
   }
 }
 $('form').addEventListener('submit', event => {
