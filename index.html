@@ -6,43 +6,56 @@
 <meta name="theme-color" content="#0b1020">
 <title>MINIK AI</title>
 <style>
+:root{color-scheme:dark;--bg:#070914;--panel:#11162a;--line:#ffffff16;--muted:#a5b0d0;--violet:#a99aff;--mint:#65ead5}
 *{box-sizing:border-box}
-html{min-height:100%;background:#090d19;scroll-behavior:smooth}
-body{margin:0;background:radial-gradient(ellipse at 50% -20%,#20264b 0%,#090d19 55%);background-attachment:fixed;color:#f4f7ff;font:15px/1.6 system-ui,sans-serif;min-height:100dvh}
-.app{max-width:850px;margin:auto;height:100dvh;min-height:0;display:flex;flex-direction:column;padding:12px 15px 0}
-header{display:flex;justify-content:space-between;align-items:center;padding:8px 0 14px;flex-shrink:0;gap:10px}
-#chat{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-behavior:smooth;display:flex;flex-direction:column;gap:13px;padding:14px 4px 22px;scrollbar-width:thin;scrollbar-color:#343b58 transparent}
-#chat:empty{flex:0 0 auto}
-#chat .msg{max-width:min(90%,700px);line-height:1.65;box-shadow:0 5px 18px #00000012}
-.composer{position:relative;bottom:auto;flex-shrink:0;border-top:1px solid #ffffff12;background:linear-gradient(180deg,#090d19ee,#090d19);padding:12px 0 calc(10px + env(safe-area-inset-bottom));display:flex;gap:9px;align-items:flex-end}
-#sessionsPanel,#panel{flex-shrink:0;max-height:45dvh;overflow-y:auto}
-@media(max-width:520px){.app{padding:9px 11px 0}header{padding:7px 0 10px}.logo{padding:8px 12px;font-size:20px}.headerActions{gap:5px}.headerActions button{padding:9px 10px;font-size:12px}#chat .msg{max-width:94%;padding:11px 13px}.composer{gap:7px}#welcome{padding:22px 0}#welcome .ask{margin:3px}}
-
-.logo{background:linear-gradient(135deg,#a99aff,#65e5d2);color:#101426;padding:10px 15px;border-radius:15px;font-size:22px;font-weight:bold}
-h2{margin:0;font-size:20px}small{color:#9ba8c7}
-button{cursor:pointer;border:0;border-radius:12px;padding:11px;background:#252d4a;color:white}
-button:hover{filter:brightness(1.2)}button:disabled{opacity:.5;cursor:wait}
-#welcome{text-align:center;margin:auto;padding:35px 0}
-#welcome .star{font-size:55px;color:#a99aff}
-h1{font-size:clamp(28px,7vw,42px)}
-.gradient{background:linear-gradient(90deg,#b9aaff,#65e5d2);color:transparent;background-clip:text}
-#chat{display:flex;flex-direction:column;gap:16px;padding:12px 0 25px}
-.msg{padding:12px 15px;border-radius:17px;max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere;animation:appear .2s ease}
-.user{align-self:flex-end;background:#252d4a;border-bottom-right-radius:4px}
-.ai{align-self:flex-start;background:#151e32;border:1px solid #ffffff12;border-bottom-left-radius:4px}
-.composer{position:sticky;bottom:0;background:#090d19;padding:12px 0 calc(12px + env(safe-area-inset-bottom));display:flex;gap:8px}
-textarea{flex:1;resize:none;min-width:0;max-height:140px;background:#151e32;border:1px solid #343b58;border-radius:16px;color:white;padding:13px;font:inherit;outline:none}
-#send{background:linear-gradient(135deg,#a99aff,#65e5d2);color:#0b1020;font-size:20px;font-weight:bold;min-width:48px}
-#settings{background:#151e32;border:1px solid #ffffff18}
-input{width:100%;padding:12px;margin:8px 0 14px;background:#090d19;border:1px solid #343b58;border-radius:10px;color:white}
-#panel,#sessionsPanel{display:none;background:#151e32;padding:16px;border-radius:16px;margin-bottom:12px}
-#panel label{display:block;color:#b8c4df}.note{font-size:12px;color:#9ba8c7}
-.headerActions{display:flex;gap:7px;align-items:center}
+html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+body{margin:0;min-height:100dvh;color:#f6f7ff;font:15px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 12% 0%,#29204f99 0,transparent 34%),radial-gradient(ellipse at 95% 18%,#103f4890 0,transparent 30%),linear-gradient(145deg,#090b18,#080d1c 55%,#0b1020);background-attachment:fixed}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background-image:radial-gradient(#bcb8ff 0.7px,transparent .7px);background-size:26px 26px;mask-image:linear-gradient(to bottom,#000,transparent 80%)}
+.app{position:relative;z-index:1;max-width:900px;margin:auto;height:100dvh;min-height:0;display:flex;flex-direction:column;padding:12px 18px 0}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0 15px;flex-shrink:0;border-bottom:1px solid #ffffff0c}
+header>div:first-child{min-width:0}
+.logo{display:grid;place-items:center;width:46px;height:46px;flex-shrink:0;background:linear-gradient(140deg,#c5b9ff,#8c79ff 48%,#60e8d2);color:#11152b;border-radius:16px;font-size:24px;font-weight:900;box-shadow:0 5px 25px #9985ff45}
+h2{margin:0;font-size:20px;font-weight:800;letter-spacing:.2px}
+small{color:var(--muted)}
+.headerActions{display:flex;gap:8px;align-items:center}
+button{cursor:pointer;border:1px solid #ffffff12;border-radius:13px;padding:10px 13px;background:#1b223b;color:#f5f6ff;font:inherit;font-weight:650;transition:transform .18s ease,border-color .18s ease,filter .18s ease,background .18s ease}
+button:hover{filter:brightness(1.13);border-color:#a99aff66}
+button:active{transform:scale(.97)}
+button:disabled{opacity:.5;cursor:wait}
+#sessionsBtn{background:#171c31}
+#settings{width:43px;height:43px;padding:0;font-size:19px;background:#171c31}
+#welcome{text-align:center;margin:auto;padding:28px 0 34px;max-width:680px;flex-shrink:0}
+#welcome .star{margin:0 auto 14px;width:74px;height:74px;display:grid;place-items:center;font-size:42px;color:#e7e0ff;border:1px solid #c0b4ff44;border-radius:25px;background:linear-gradient(145deg,#9b88ff2b,#5fe7d51a);box-shadow:0 0 55px #8b7bff20;animation:float 4s ease-in-out infinite}
+h1{margin:10px 0;font-size:clamp(29px,7vw,45px);line-height:1.18;letter-spacing:-1.1px}
+.gradient{background:linear-gradient(100deg,#c7baff 5%,#a99aff 42%,#65ead5 95%);color:transparent;background-clip:text;-webkit-background-clip:text}
+#welcome p{color:var(--muted);margin:12px 0 22px}
+#welcome .ask{margin:4px;padding:10px 13px;border-radius:14px;background:#171d32;border-color:#ffffff12;font-size:13px}
+#chat{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-behavior:smooth;display:flex;flex-direction:column;gap:15px;padding:20px 5px 26px;scrollbar-width:thin;scrollbar-color:#3c4260 transparent}
+#chat:empty{flex:0 0 auto;padding:0}
+.msg{padding:13px 16px;border-radius:20px;max-width:min(88%,720px);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;animation:appear .22s ease;box-shadow:0 8px 24px #0000001a}
+.user{align-self:flex-end;background:linear-gradient(135deg,#514a82,#353d69);border:1px solid #bcb0ff26;border-bottom-right-radius:6px}
+.ai{align-self:flex-start;background:linear-gradient(145deg,#171f35,#11192c);border:1px solid #ffffff12;border-bottom-left-radius:6px}
+.composer{position:relative;flex-shrink:0;display:flex;align-items:flex-end;gap:9px;padding:12px 0 calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,#090d19e8,#090d19)}
+textarea{flex:1;resize:none;min-width:0;max-height:140px;background:#131a2d;border:1px solid #ffffff1c;border-radius:19px;color:#fff;padding:13px 15px;font:inherit;outline:none;box-shadow:inset 0 1px 0 #ffffff08;transition:border-color .2s,box-shadow .2s}
+textarea:focus,input:focus{border-color:#9e91ffb3;box-shadow:0 0 0 3px #9e91ff17}
+textarea::placeholder,input::placeholder{color:#808ba9}
+#send{width:49px;min-width:49px;height:49px;padding:0;border:0;border-radius:16px;background:linear-gradient(140deg,#bdb0ff,#8e7aff 48%,#62e8d4);color:#101426;font-size:22px;font-weight:900;box-shadow:0 5px 20px #9886ff38}
+#panel,#sessionsPanel{display:none;flex-shrink:0;max-height:45dvh;overflow-y:auto;background:#11172bf2;border:1px solid var(--line);backdrop-filter:blur(20px);padding:16px;border-radius:19px;margin:12px 0;box-shadow:0 15px 40px #0003}
+#panel label{display:block;color:#c4cbe0;font-size:13px;font-weight:650}
+input{width:100%;padding:12px 13px;margin:8px 0 14px;background:#090e1d;border:1px solid #ffffff1b;border-radius:12px;color:white;font:inherit;outline:none}
+#save{background:linear-gradient(120deg,#9f90ff,#5ddfce);color:#101426;border:0}
+#clear{background:#442637}
+.note{font-size:12px;color:#9ba8c7}
 .sessionItem{display:flex;gap:8px;align-items:center;margin-top:8px}
-.sessionOpen{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#202943}
-.sessionDelete{background:#512c3b}
-#sessionsPanel h3{margin:0 0 8px;font-size:16px}
-@keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.sessionOpen{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#1a223a}
+.sessionDelete{background:#462637;color:#ffc9d4}
+#sessionsPanel h3{margin:0 0 10px;font-size:16px}
+#newChat{background:linear-gradient(120deg,#9f90ff,#5ddfce);color:#101426;border:0}
+.app>small:last-child{flex-shrink:0;padding:0 0 5px;color:#7f8aa8}
+@keyframes appear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@media(max-width:520px){.app{padding:8px 11px 0}header{padding:7px 0 11px}.logo{width:42px;height:42px;border-radius:14px;font-size:22px}h2{font-size:18px}.headerActions{gap:5px}.headerActions button{padding:9px 10px;font-size:12px}#settings{width:39px;height:39px;padding:0;font-size:18px}#welcome{padding:22px 0}.msg{max-width:94%;padding:11px 13px;border-radius:17px}#chat{gap:12px;padding:14px 2px 20px}.composer{gap:7px}textarea{padding:12px 13px;border-radius:16px}#send{width:46px;min-width:46px;height:46px;border-radius:15px}#welcome .ask{margin:3px;font-size:12px;padding:9px 10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
