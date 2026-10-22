@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="az">
 <head>
@@ -12,10 +11,9 @@ body{margin:0;background:#090d19;color:#f4f7ff;font:15px/1.6 system-ui,sans-seri
 .app{max-width:850px;margin:auto;min-height:100vh;display:flex;flex-direction:column;padding:15px}
 header{display:flex;justify-content:space-between;align-items:center;padding:10px 0 18px}
 .logo{background:linear-gradient(135deg,#a99aff,#65e5d2);color:#101426;padding:10px 15px;border-radius:15px;font-size:22px;font-weight:bold}
-h2{margin:0;font-size:20px}
-small{color:#9ba8c7}
+h2{margin:0;font-size:20px}small{color:#9ba8c7}
 button{cursor:pointer;border:0;border-radius:12px;padding:11px;background:#252d4a;color:white}
-button:hover{filter:brightness(1.2)}
+button:hover{filter:brightness(1.2)}button:disabled{opacity:.5;cursor:wait}
 #welcome{text-align:center;margin:auto;padding:35px 0}
 #welcome .star{font-size:55px;color:#a99aff}
 h1{font-size:clamp(28px,7vw,42px)}
@@ -30,318 +28,174 @@ textarea{flex:1;resize:none;min-width:0;max-height:140px;background:#151e32;bord
 #settings{background:#151e32;border:1px solid #ffffff18}
 input{width:100%;padding:12px;margin:8px 0 14px;background:#090d19;border:1px solid #343b58;border-radius:10px;color:white}
 #panel{display:none;background:#151e32;padding:16px;border-radius:16px;margin-bottom:12px}
-#panel label{display:block;color:#b8c4df}
-.note{font-size:12px;color:#9ba8c7}
+#panel label{display:block;color:#b8c4df}.note{font-size:12px;color:#9ba8c7}
 @keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 <div class="app">
-<header>
- <div style="display:flex;gap:11px;align-items:center">
-  <div class="logo">M</div>
-  <div><h2>MINIK AI</h2><small>✦ Sənin ağıllı köməkçin</small></div>
- </div>
- <button id="settings">⚙</button>
-</header>
-
+<header><div style="display:flex;gap:11px;align-items:center"><div class="logo">M</div><div><h2>MINIK AI</h2><small>✦ Sənin ağıllı köməkçin</small></div></div><button id="settings" type="button">⚙</button></header>
 <section id="panel">
- <label for="api">Gemini API açarı</label>
- <input id="api" type="password" placeholder="Gemini API açarını daxil et">
- <label for="model">Model</label>
- <input id="model" value="gemini-3.8-flash">
- <button id="save">Yadda saxla</button>
- <button id="clear">Söhbəti sil</button>
- <p class="note">API açarı bu brauzerin yaddaşında saxlanır. Bu, ictimai saytda tam təhlükəsiz deyil. Açarını heç kimlə paylaşma.</p>
+<label for="api">Gemini API açarı</label><input id="api" type="password" autocomplete="off" placeholder="Gemini API açarını daxil et">
+<label for="model">Model</label><input id="model" value="gemini-3.8-flash">
+<button id="save" type="button">Yadda saxla</button> <button id="clear" type="button">Söhbəti sil</button>
+<p class="note">API açarı bu brauzerin yaddaşında saxlanır. İctimai saytda bu tam təhlükəsiz deyil. Açarını heç kimlə paylaşma.</p>
 </section>
-
-<section id="welcome">
- <div class="star">✦</div>
- <h1>Salam! Mən <span class="gradient">MINIK AI</span></h1>
- <p style="color:#9ba8c7">Nə öyrənmək və ya yaratmaq istəyirsən?</p>
- <button class="ask">Mənə HTML oyunu yaz</button>
- <button class="ask">Python-u izah et</button>
- <button class="ask">Vikipediyada pişiklər haqqında axtar</button>
-</section>
-
+<section id="welcome"><div class="star">✦</div><h1>Salam! Mən <span class="gradient">MINIK AI</span></h1><p style="color:#9ba8c7">Nə öyrənmək və ya yaratmaq istəyirsən?</p>
+<button class="ask" type="button">Mənə HTML oyunu yaz</button> <button class="ask" type="button">Python-u izah et</button> <button class="ask" type="button">Vikipediyada pişiklər haqqında axtar</button></section>
 <div id="chat"></div>
-
-<form class="composer" id="form">
- <textarea id="prompt" rows="1" placeholder="MINIK AI-yə mesaj yaz..."></textarea>
- <button id="send" type="submit">➤</button>
-</form>
+<form class="composer" id="form"><textarea id="prompt" rows="1" placeholder="MINIK AI-yə mesaj yaz..."></textarea><button id="send" type="submit">➤</button></form>
 <small style="text-align:center">MINIK AI səhv edə bilər. Vacib məlumatları yoxla.</small>
 </div>
-
 <script>
-const $=id=>document.getElementById(id);
-const chat=$('chat'),welcome=$('welcome'),prompt=$('prompt');
-const HISTORY='minik_history_v3';
-let history=[],busy=false;
+'use strict';
+const $ = id => document.getElementById(id);
+const chat = $('chat'), welcome = $('welcome'), promptBox = $('prompt');
+const HISTORY = 'minik_history_v3';
+let history = [], busy = false;
+$('api').value = localStorage.getItem('minik_api_key') || '';
+$('model').value = localStorage.getItem('minik_model') || 'gemini-3.8-flash';
 
-$('api').value=localStorage.getItem('minik_api_key')||'';
-$('model').value=localStorage.getItem('minik_model')||'gemini-3.8-flash';
+function add(role, text) {
+  welcome.style.display = 'none';
+  const bubble = document.createElement('div');
+  bubble.className = 'msg ' + (role === 'user' ? 'user' : 'ai');
+  bubble.textContent = text;
+  chat.appendChild(bubble);
+  window.scrollTo({top:document.body.scrollHeight, behavior:'smooth'});
+  return bubble;
+}
+function saveHistory() {
+  try { localStorage.setItem(HISTORY, JSON.stringify(history.slice(-30))); } catch(e) {}
+}
+function renderHistory() {
+  history.forEach(m => add(m.role === 'user' ? 'user' : 'ai', m.content));
+  if (history.length) welcome.style.display = 'none';
+}
+try {
+  const old = JSON.parse(localStorage.getItem(HISTORY) || '[]');
+  if (Array.isArray(old)) history = old.filter(m => m && typeof m.content === 'string' && ['user','model'].includes(m.role)).slice(-30);
+  renderHistory();
+} catch(e) { history = []; }
 
-function add(role,text){
- welcome.style.display='none';
- const b=document.createElement('div');
- b.className='msg '+(role==='user'?'user':'ai');
- b.textContent=text;chat.appendChild(b);
- window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
- return b;
-}
-function saveHistory(){
- try{localStorage.setItem(HISTORY,JSON.stringify(history.slice(-30)))}catch(e){}
-}
-function renderHistory(){
- history.forEach(m=>add(m.role==='user'?'user':'ai',m.content));
- if(history.length)welcome.style.display='none';
-}
-try{
- const old=JSON.parse(localStorage.getItem(HISTORY)||'[]');
- if(Array.isArray(old))history=old.filter(m=>m&&typeof m.content==='string'&&['user','model'].includes(m.role)).slice(-30);
- renderHistory();
-}catch(e){history=[]}
-
-$('settings').onclick=()=>{
- $('panel').style.display=$('panel').style.display==='block'?'none':'block';
-};
-$('save').onclick=()=>{
- const key=$('api').value.trim();
- if(!key){alert('Gemini API açarını daxil et.');return}
- localStorage.setItem('minik_api_key',key);
- localStorage.setItem('minik_model',$('model').value.trim()||'gemini-3.8-flash');
- alert('Parametrlər yadda saxlanıldı.');
-};
-$('clear').onclick=()=>{
- history=[];chat.innerHTML='';localStorage.removeItem(HISTORY);
- welcome.style.display='';alert('Söhbət silindi.');
-};
-
-async function wiki(query){
- const url='https://az.wikipedia.org/w/api.php?action=query&list=search&srsearch='+encodeURIComponent(query)+'&format=json&origin=*&srlimit=3';
- const r=await fetch(url);
- if(!r.ok)throw Error('Vikipediya bağlantısı alınmadı.');
- const d=await r.json();
- return (d.query?.search||[]).map(x=>
-  x.title+': '+x.snippet.replace(/<[^>]*>/g,'')+
-  ' — https://az.wikipedia.org/wiki/'+encodeURIComponent(x.title.replace(/ /g,'_'))
- ).join('\n');
-}
-
-async function askGemini(contents){
- const key=localStorage.getItem('minik_api_key');
- const model=localStorage.getItem('minik_model')||'gemini-3.8-flash';
- const url='https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent';
- for(let attempt=0;attempt<3;attempt++){
-  let r;
-  try{
-   r=await fetch(url,{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-goog-api-key':key},
-    body:JSON.stringify({
-     systemInstruction:{parts:[{text:'Sən MINIK AI adlı mehriban, faydalı köməkçisən. Azərbaycan dilində cavab ver. Bilmədiyini uydurma. Kod istənəndə aydın, işlək kod yaz. Vikipediya nəticələri veriləndə onlara əsaslan və mənbəni göstər.'}]},
-     contents,
-     generationConfig:{thinkingConfig:{thinkingLevel:'LOW'}}
-    })
-   });
-  }catch(e){
-   if(attempt===2)throw Error('İnternet bağlantısını yoxla.');
-   await new Promise(ok=>setTimeout(ok,500*(attempt+1)));continue;
-  }
-  if(r.ok)return r.json();
-  const d=await r.json().catch(()=>({}));
-  if([429,500,502,503,504].includes(r.status)&&attempt<2){
-   await new Promise(ok=>setTimeout(ok,700*2**attempt));continue;
-  }
-  throw Error(d.error?.message||'Gemini xətası: '+r.status);
- }
- throw Error('Yenidən cəhd et.');
-}
-
-function fastText(b,text){
- b.textContent='';let i=0;
- const step=Math.max(5,Math.ceil(text.length/100));
- function tick(){
-  i=Math.min(text.length,i+step);
-  b.textContent=text.slice(0,i);
-  if(i<text.length)requestAnimationFrame(tick);
- }
- tick();
-}
-
-async function send(text){
- text=text.trim();if(!text||busy)return;
- const key=localStorage.getItem('minik_api_key');
- if(!key){$('panel').style.display='block';alert('Əvvəl Gemini API açarını əlavə et.');return}
- busy=true;$('send').disabled=true;prompt.disabled=true;
- add('user',text);
- history.push({role:'user',content:text});saveHistory();
- const bubble=add('ai','● ● ●');
- try{
-  let extra='';
-  if(/^(\/wiki\s+|vikipediyada\s+|wikipedia\s+)/i.test(text)){
-   const q=text.replace(/^(\/wiki\s+|vikipediyada\s+|wikipedia\s+)/i,'').trim();
-   if(q){const result=await wiki(q);extra=result?'Vikipediya nəticələri:\n'+result:'Vikipediyada nəticə tapılmadı.'}
-  }
-  const contents=history.slice(-20).map(m=>({role:m.role,parts:[{text:m.content}]}));
-  if(extra)contents.push({role:'user',parts:[{text:extra+'\nBu məlumat əsasında sualı cavabla: '+text}]});
-  const data=await askGemini(contents);
-  const answer=(data.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
-  if(!answer)throw Error('Boş cavab alındı. Modeli və API limitini yoxla.');
-  history.push({role:'model',content:answer});saveHistory();
-  fastText(bubble,answer);
- }catch(e){
-  bubble.textContent='Xəta: '+e.message;
-  history.pop();saveHistory();
- }finally{
-  busy=false;$('send').disabled=false;prompt.disabled=false;prompt.focus();
- }
-}
-$('form').addEventListener('submit',e=>{
- e.preventDefault();const t=prompt.value;prompt.value='';prompt.style.height='auto';send(t);
+$('settings').addEventListener('click', () => {
+  $('panel').style.display = $('panel').style.display === 'block' ? 'none' : 'block';
 });
-prompt.addEventListener('input',()=>{prompt.style.height='auto';prompt.style.height=Math.min(prompt.scrollHeight,140)+'px'});
-prompt.addEventListener('keydown',e=>{
- if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();$('form').requestSubmit()}
+$('save').addEventListener('click', () => {
+  const key = $('api').value.trim();
+  if (!key) { alert('Gemini API açarını daxil et.'); return; }
+  localStorage.setItem('minik_api_key', key);
+  localStorage.setItem('minik_model', $('model').value.trim() || 'gemini-3.8-flash');
+  alert('Parametrlər yadda saxlanıldı.');
 });
-document.querySelectorAll('.ask').forEach(b=>b.onclick=>{
- prompt.value=b.textContent;$('form').requestSubmit();
+$('clear').addEventListener('click', () => {
+  history = []; chat.innerHTML = ''; localStorage.removeItem(HISTORY);
+  welcome.style.display = ''; alert('Söhbət silindi.');
 });
-</script>
-</body>
-</html>
-model') || 'gemini-3.8-flash';
-  $('apiKey').value = savedKey;
-  $('modelName').value = savedModel;
 
-  function toast(message) {
-    toastBox.textContent = message;
-    toastBox.style.display = 'block';
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toastBox.style.display = 'none', 2800);
-  }
-  function openSettings(){ overlay.classList.add('open'); }
-  function closeSettings(){ overlay.classList.remove('open'); }
-  $('settingsBtn').addEventListener('click', openSettings);
-  $('closeSettings').addEventListener('click', closeSettings);
-  overlay.addEventListener('click', e => { if(e.target === overlay) closeSettings(); });
-  $('saveSettings').addEventListener('click', () => {
-    const key = $('apiKey').value.trim();
-    const model = $('modelName').value.trim() || 'gemini-3.8-flash';
-    if(!key){ toast('Əvvəl Gemini API açarını daxil et.'); return; }
-    localStorage.setItem('minik_api_key', key);
-    localStorage.setItem('minik_model', model);
-    closeSettings(); toast('Parametrlər yadda saxlanıldı.');
-  });
-  $('clearChat').addEventListener('click', () => {
-    history = []; chat.innerHTML = ''; welcome.style.display = ''; closeSettings(); toast('Söhbət təmizləndi.');
-  });
-
-  function addMessage(role, text, typing=false) {
-    welcome.style.display = 'none';
-    const row = document.createElement('div');
-    row.className = 'message ' + (role === 'user' ? 'user' : 'assistant');
-    const avatar = document.createElement('div');
-    avatar.className = 'avatar'; avatar.textContent = role === 'user' ? 'S' : 'M';
-    const bubble = document.createElement('div'); bubble.className = 'bubble';
-    if(typing) {
-      bubble.innerHTML = '<span class="typingdots"><i></i><i></i><i></i></span>';
-    } else bubble.textContent = text;
-    row.append(avatar,bubble); chat.append(row);
-    window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-    return bubble;
-  }
-
-  function showTextFast(bubble, text) {
-    // Hər dəfə çoxlu simvol əlavə edir ki, uzun cavablar da sürətlə görünsün.
-    bubble.textContent = '';
-    let index = 0;
-    const step = Math.max(4, Math.ceil(text.length / 180));
-    function tick(){
-      index = Math.min(text.length, index + step);
-      bubble.textContent = text.slice(0,index);
-      if(index < text.length) requestAnimationFrame(tick);
-      else window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
-    }
-    tick();
-  }
-
-  async function requestGemini(key, model, contents) {
-    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
-    const payload = {
-      systemInstruction: {parts:[{text:'Sən MINIK AI adlı faydalı, mehriban və dəqiq köməkçisən. İstifadəçinin dilində cavab ver, Azərbaycan dilinə üstünlük ver. Aydın və faydalı ol. Bilmədiyini uydurma. Kod istənəndə işlək və tam kod ver.'}]},
-      contents,
-      generationConfig: {thinkingConfig:{thinkingLevel:'LOW'}}
-    };
-    for(let attempt=0; attempt<3; attempt++){
-      let response;
-      try {
-        response = await fetch(url, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','x-goog-api-key':key},
-          body:JSON.stringify(payload)
-        });
-      } catch(err) {
-        if(attempt===2) throw new Error('İnternet bağlantısı alınmadı. İnterneti yoxlayıb yenidən cəhd et.');
-        await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
-        continue;
-      }
-      if(response.ok) return response.json();
-      const data = await response.json().catch(()=>({}));
-      const message = data.error?.message || ('Sorğu uğursuz oldu ('+response.status+').');
-      if([429,500,502,503,504].includes(response.status) && attempt<2){
-        await new Promise(resolve=>setTimeout(resolve,700*Math.pow(2,attempt)));
-        continue;
-      }
-      if(response.status===400 || response.status===401 || response.status===403) {
-        throw new Error(message + ' API açarını və model adını parametrlərdən yoxla.');
-      }
-      throw new Error(message);
-    }
-    throw new Error('Cavab alınmadı. Bir az sonra yenidən yoxla.');
-  }
-
-  async function sendMessage(text) {
-    text = text.trim();
-    if(!text || busy) return;
-    const key = localStorage.getItem('minik_api_key') || '';
-    const model = localStorage.getItem('minik_model') || 'gemini-3.8-flash';
-    if(!key){ openSettings(); toast('İşlətmək üçün Gemini API açarı lazımdır.'); return; }
-    busy = true; sendBtn.disabled = true; prompt.disabled = true;
-    addMessage('user',text);
-    history.push({role:'user',parts:[{text}]});
-    const bubble = addMessage('assistant','',true);
+async function wiki(query) {
+  const url = 'https://az.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(query) + '&format=json&origin=*&srlimit=3';
+  const response = await fetch(url);
+  if (!response.ok) throw new Error('Vikipediya bağlantısı alınmadı.');
+  const data = await response.json();
+  return (data.query?.search || []).map(x =>
+    x.title + ': ' + x.snippet.replace(/<[^>]*>/g, '') +
+    ' — https://az.wikipedia.org/wiki/' + encodeURIComponent(x.title.replace(/ /g, '_'))
+  ).join('\n');
+}
+async function askGemini(contents) {
+  const key = localStorage.getItem('minik_api_key');
+  const model = localStorage.getItem('minik_model') || 'gemini-3.8-flash';
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let response;
     try {
-      const data = await requestGemini(key,model,history);
-      const answer = (data.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim();
-      if(!answer) throw new Error('Boş cavab alındı. Model adını yoxla və yenidən cəhd et.');
-      history.push({role:'model',parts:[{text:answer}]});
-      showTextFast(bubble,answer);
-    } catch(err) {
-      bubble.textContent = 'Bağlantı xətası: ' + (err?.message || 'Naməlum xəta');
-      history.pop();
-    } finally {
-      busy = false; sendBtn.disabled = false; prompt.disabled = false; prompt.focus();
+      response = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-goog-api-key':key},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:'Sən MINIK AI adlı mehriban və faydalı köməkçisən. Azərbaycan dilində cavab ver. Bilmədiyini uydurma. Kod istənəndə aydın, işlək kod yaz. Vikipediya nəticələri veriləndə mənbəni göstər.'}]},
+          contents,
+          generationConfig:{thinkingConfig:{thinkingLevel:'LOW'}}
+        })
+      });
+    } catch(e) {
+      if (attempt === 2) throw new Error('İnternet bağlantısını yoxla.');
+      await new Promise(resolve => setTimeout(resolve, 500 * (attempt + 1)));
+      continue;
     }
+    if (response.ok) return response.json();
+    const data = await response.json().catch(() => ({}));
+    if ([429,500,502,503,504].includes(response.status) && attempt < 2) {
+      await new Promise(resolve => setTimeout(resolve, 700 * 2 ** attempt));
+      continue;
+    }
+    throw new Error(data.error?.message || 'Gemini xətası: ' + response.status);
   }
-
-  $('composer').addEventListener('submit', e => {
-    e.preventDefault();
-    const text = prompt.value; prompt.value=''; prompt.style.height='auto';
-    sendMessage(text);
+  throw new Error('Yenidən cəhd et.');
+}
+function fastText(bubble, text) {
+  bubble.textContent = '';
+  let index = 0;
+  const step = Math.max(5, Math.ceil(text.length / 100));
+  function tick() {
+    index = Math.min(text.length, index + step);
+    bubble.textContent = text.slice(0, index);
+    if (index < text.length) requestAnimationFrame(tick);
+  }
+  tick();
+}
+async function sendMessage(text) {
+  text = text.trim();
+  if (!text || busy) return;
+  const key = localStorage.getItem('minik_api_key');
+  if (!key) { $('panel').style.display = 'block'; alert('Əvvəl Gemini API açarını əlavə et.'); return; }
+  busy = true; $('send').disabled = true; promptBox.disabled = true;
+  add('user', text);
+  history.push({role:'user', content:text}); saveHistory();
+  const bubble = add('ai', '● ● ●');
+  try {
+    let extra = '';
+    if (/^(\/wiki\s+|vikipediyada\s+|wikipedia\s+)/i.test(text)) {
+      const query = text.replace(/^(\/wiki\s+|vikipediyada\s+|wikipedia\s+)/i, '').trim();
+      if (query) {
+        const result = await wiki(query);
+        extra = result ? 'Vikipediya nəticələri:\n' + result : 'Vikipediyada nəticə tapılmadı.';
+      }
+    }
+    const contents = history.slice(-20).map(m => ({role:m.role, parts:[{text:m.content}]}));
+    if (extra) contents.push({role:'user', parts:[{text:extra + '\nBu məlumat əsasında sualı cavabla: ' + text}]});
+    const data = await askGemini(contents);
+    const answer = (data.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').trim();
+    if (!answer) throw new Error('Boş cavab alındı. Modeli və API limitini yoxla.');
+    history.push({role:'model', content:answer}); saveHistory();
+    fastText(bubble, answer);
+  } catch(error) {
+    bubble.textContent = 'Xəta: ' + error.message;
+    history.pop(); saveHistory();
+  } finally {
+    busy = false; $('send').disabled = false; promptBox.disabled = false; promptBox.focus();
+  }
+}
+$('form').addEventListener('submit', event => {
+  event.preventDefault();
+  const text = promptBox.value;
+  promptBox.value = ''; promptBox.style.height = 'auto';
+  sendMessage(text);
+});
+promptBox.addEventListener('input', () => {
+  promptBox.style.height = 'auto';
+  promptBox.style.height = Math.min(promptBox.scrollHeight, 140) + 'px';
+});
+promptBox.addEventListener('keydown', event => {
+  if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); $('form').requestSubmit(); }
+});
+document.querySelectorAll('.ask').forEach(button => {
+  button.addEventListener('click', () => {
+    promptBox.value = button.textContent;
+    $('form').requestSubmit();
   });
-  prompt.addEventListener('input', () => {
-    prompt.style.height='auto';
-    prompt.style.height=Math.min(prompt.scrollHeight,160)+'px';
-  });
-  prompt.addEventListener('keydown', e => {
-    if(e.key==='Enter' && !e.shiftKey){e.preventDefault();$('composer').requestSubmit();}
-  });
-  document.querySelectorAll('.suggestion').forEach(button => button.addEventListener('click', () => {
-    prompt.value = button.textContent; $('composer').requestSubmit();
-  }));
-})();
+});
 </script>
 </body>
 </html>
