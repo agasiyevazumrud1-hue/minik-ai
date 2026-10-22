@@ -27,14 +27,20 @@ textarea{flex:1;resize:none;min-width:0;max-height:140px;background:#151e32;bord
 #send{background:linear-gradient(135deg,#a99aff,#65e5d2);color:#0b1020;font-size:20px;font-weight:bold;min-width:48px}
 #settings{background:#151e32;border:1px solid #ffffff18}
 input{width:100%;padding:12px;margin:8px 0 14px;background:#090d19;border:1px solid #343b58;border-radius:10px;color:white}
-#panel{display:none;background:#151e32;padding:16px;border-radius:16px;margin-bottom:12px}
+#panel,#sessionsPanel{display:none;background:#151e32;padding:16px;border-radius:16px;margin-bottom:12px}
 #panel label{display:block;color:#b8c4df}.note{font-size:12px;color:#9ba8c7}
+.headerActions{display:flex;gap:7px;align-items:center}
+.sessionItem{display:flex;gap:8px;align-items:center;margin-top:8px}
+.sessionOpen{flex:1;min-width:0;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:#202943}
+.sessionDelete{background:#512c3b}
+#sessionsPanel h3{margin:0 0 8px;font-size:16px}
 @keyframes appear{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
 <div class="app">
-<header><div style="display:flex;gap:11px;align-items:center"><div class="logo">M</div><div><h2>MINIK AI</h2><small>✦ Sənin ağıllı köməkçin</small></div></div><button id="settings" type="button">⚙</button></header>
+<header><div style="display:flex;gap:11px;align-items:center"><div class="logo">M</div><div><h2>MINIK AI</h2><small>✦ Sənin ağıllı köməkçin</small></div></div><div class="headerActions"><button id="sessionsBtn" type="button">☰ Söhbətlər</button><button id="settings" type="button">⚙</button></div></header>
+<section id="sessionsPanel"><h3>Söhbət tarixçəsi</h3><button id="newChat" type="button">＋ Yeni söhbət</button><div id="sessionList"></div><p class="note">Söhbətlər bu brauzerdə yadda saxlanılır.</p></section>
 <section id="panel">
 <label for="api">Gemini API açarı</label><input id="api" type="password" autocomplete="off" placeholder="Gemini API açarını daxil et">
 <label for="model">Model</label><input id="model" value="gemini-3.8-flash">
@@ -52,7 +58,9 @@ input{width:100%;padding:12px;margin:8px 0 14px;background:#090d19;border:1px so
 const $ = id => document.getElementById(id);
 const chat = $('chat'), welcome = $('welcome'), promptBox = $('prompt');
 const HISTORY = 'minik_history_v3';
-let history = [], busy = false;
+const SESSIONS = 'minik_sessions_v1';
+const ACTIVE = 'minik_active_session_v1';
+let history = [], busy = false, sessions = [], activeSessionId = '';
 $('api').value = localStorage.getItem('minik_api_key') || '';
 $('model').value = localStorage.getItem('minik_model') || 'gemini-3.8-flash';
 
@@ -66,21 +74,89 @@ function add(role, text) {
   return bubble;
 }
 function saveHistory() {
-  try { localStorage.setItem(HISTORY, JSON.stringify(history.slice(-30))); } catch(e) {}
+  history = history.slice(-60);
+  try {
+    localStorage.setItem(HISTORY, JSON.stringify(history));
+    const idx = sessions.findIndex(s => s.id === activeSessionId);
+    if (idx >= 0) {
+      sessions[idx].messages = history.slice(-60);
+      sessions[idx].updated = Date.now();
+      const firstUser = history.find(m => m.role === 'user');
+      if (firstUser) sessions[idx].title = firstUser.content.slice(0, 34) || 'Yeni söhbət';
+    }
+    localStorage.setItem(SESSIONS, JSON.stringify(sessions.slice(-50)));
+    localStorage.setItem(ACTIVE, activeSessionId);
+    renderSessions();
+  } catch(e) {}
 }
 function renderHistory() {
+  chat.innerHTML = '';
   history.forEach(m => add(m.role === 'user' ? 'user' : 'ai', m.content));
-  if (history.length) welcome.style.display = 'none';
+  welcome.style.display = history.length ? 'none' : '';
+}
+function renderSessions() {
+  const list = $('sessionList');
+  list.innerHTML = '';
+  [...sessions].sort((a,b) => b.updated - a.updated).forEach(s => {
+    const row = document.createElement('div'); row.className = 'sessionItem';
+    const open = document.createElement('button'); open.className = 'sessionOpen';
+    open.textContent = (s.id === activeSessionId ? '✓ ' : '') + (s.title || 'Yeni söhbət');
+    open.title = s.title || 'Yeni söhbət';
+    open.addEventListener('click', () => openSession(s.id));
+    const del = document.createElement('button'); del.className = 'sessionDelete'; del.textContent = '✕'; del.title = 'Söhbəti sil';
+    del.addEventListener('click', () => deleteSession(s.id));
+    row.append(open, del); list.appendChild(row);
+  });
+  if (!sessions.length) list.textContent = 'Hələ saxlanmış söhbət yoxdur.';
+}
+function createSession() {
+  const s = {id:Date.now().toString(36) + Math.random().toString(36).slice(2,7), title:'Yeni söhbət', messages:[], updated:Date.now()};
+  sessions.push(s); activeSessionId = s.id; history = [];
+  chat.innerHTML = ''; welcome.style.display = '';
+  localStorage.setItem(SESSIONS, JSON.stringify(sessions)); localStorage.setItem(ACTIVE, activeSessionId);
+  renderSessions(); $('sessionsPanel').style.display = 'none';
+}
+function openSession(id) {
+  const s = sessions.find(x => x.id === id); if (!s) return;
+  activeSessionId = id; history = Array.isArray(s.messages) ? s.messages.slice(-60) : [];
+  localStorage.setItem(ACTIVE, activeSessionId); localStorage.setItem(HISTORY, JSON.stringify(history));
+  renderHistory(); renderSessions(); $('sessionsPanel').style.display = 'none';
+}
+function deleteSession(id) {
+  sessions = sessions.filter(s => s.id !== id);
+  if (activeSessionId === id) {
+    if (sessions.length) { activeSessionId = sessions.sort((a,b) => b.updated-a.updated)[0].id; }
+    else { createSession(); return; }
+  }
+  localStorage.setItem(SESSIONS, JSON.stringify(sessions));
+  openSession(activeSessionId); renderSessions();
 }
 try {
-  const old = JSON.parse(localStorage.getItem(HISTORY) || '[]');
-  if (Array.isArray(old)) history = old.filter(m => m && typeof m.content === 'string' && ['user','model'].includes(m.role)).slice(-30);
-  renderHistory();
-} catch(e) { history = []; }
+  const saved = JSON.parse(localStorage.getItem(SESSIONS) || '[]');
+  if (Array.isArray(saved) && saved.length) sessions = saved.filter(s => s && s.id && Array.isArray(s.messages));
+  if (sessions.length) {
+    activeSessionId = localStorage.getItem(ACTIVE) || sessions[sessions.length-1].id;
+    if (!sessions.some(s => s.id === activeSessionId)) activeSessionId = sessions[sessions.length-1].id;
+    history = sessions.find(s => s.id === activeSessionId).messages.slice(-60);
+  } else {
+    const old = JSON.parse(localStorage.getItem(HISTORY) || '[]');
+    history = Array.isArray(old) ? old.filter(m => m && typeof m.content === 'string' && ['user','model'].includes(m.role)).slice(-60) : [];
+    activeSessionId = Date.now().toString(36);
+    sessions = [{id:activeSessionId,title:(history.find(m=>m.role==='user')?.content||'Əvvəlki söhbət').slice(0,34),messages:history.slice(),updated:Date.now()}];
+    localStorage.setItem(SESSIONS, JSON.stringify(sessions)); localStorage.setItem(ACTIVE, activeSessionId);
+  }
+  renderHistory(); renderSessions();
+} catch(e) { history = []; sessions = []; createSession(); }
 
 $('settings').addEventListener('click', () => {
   $('panel').style.display = $('panel').style.display === 'block' ? 'none' : 'block';
+  $('sessionsPanel').style.display = 'none';
 });
+$('sessionsBtn').addEventListener('click', () => {
+  $('sessionsPanel').style.display = $('sessionsPanel').style.display === 'block' ? 'none' : 'block';
+  $('panel').style.display = 'none'; renderSessions();
+});
+$('newChat').addEventListener('click', createSession);
 $('save').addEventListener('click', () => {
   const key = $('api').value.trim();
   if (!key) { alert('Gemini API açarını daxil et.'); return; }
@@ -90,7 +166,10 @@ $('save').addEventListener('click', () => {
 });
 $('clear').addEventListener('click', () => {
   history = []; chat.innerHTML = ''; localStorage.removeItem(HISTORY);
-  welcome.style.display = ''; alert('Söhbət silindi.');
+  const s = sessions.find(x => x.id === activeSessionId);
+  if (s) { s.messages = []; s.title = 'Yeni söhbət'; s.updated = Date.now(); }
+  localStorage.setItem(SESSIONS, JSON.stringify(sessions));
+  welcome.style.display = ''; renderSessions(); alert('Cari söhbət silindi.');
 });
 
 async function wiki(query) {
