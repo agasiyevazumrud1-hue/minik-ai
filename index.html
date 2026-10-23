@@ -80,6 +80,7 @@ input{width:100%;padding:12px 13px;margin:8px 0 14px;background:#090e1d;border:1
 <script>
 'use strict';
 const $ = id => document.getElementById(id);
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(err => console.warn('Service worker registration failed:', err))); }
 const chat = $('chat'), welcome = $('welcome'), promptBox = $('prompt');
 const HISTORY = 'minik_history_v3';
 const SESSIONS = 'minik_sessions_v1';
