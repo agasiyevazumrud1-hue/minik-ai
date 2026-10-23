@@ -1,1 +1,293 @@
+<!doctype html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#0b1020">
+<title>MINIK AI</title>
+<style>
+:root{color-scheme:dark;--bg:#090d19;--panel:#10172a;--panel2:#151e34;--line:rgba(255,255,255,.09);--text:#f4f7ff;--muted:#9ba8c7;--accent:#8b7cff;--accent2:#44d9c5;--user:#252d4a;--shadow:0 18px 60px rgba(0,0,0,.25)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+body{margin:0;position:fixed;inset:0;-webkit-user-select:none;user-select:none;background:radial-gradient(ellipse at 12% 0%,rgba(99,82,220,.22),transparent 35%),radial-gradient(ellipse at 95% 90%,rgba(30,184,171,.12),transparent 35%),var(--bg);color:var(--text);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{padding:0;line-height:1;display:flex;align-items:center;justify-content:center}
+svg{display:block}
+.logo,.orb{line-height:1}.logo{padding-bottom:1px}
+.iconbtn svg,.send svg{width:22px;height:22px}.orb svg{width:36px;height:36px}
+button{cursor:pointer}
+.app{height:100%;height:100dvh;max-width:1000px;margin:0 auto;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 16px 0;overflow:hidden}
+.bubble,.bubble *,textarea,input{-webkit-user-select:text;user-select:text}
+.topbar{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.logo{width:42px;height:42px;border-radius:15px;display:grid;place-items:center;font-size:22px;font-weight:900;background:linear-gradient(135deg,#9b8cff,#49e0d0);color:#09111f;box-shadow:0 7px 25px #7768ef45;animation:float 4s ease-in-out infinite}
+.brandname{font-size:19px;font-weight:850;letter-spacing:.2px;white-space:nowrap}.sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand>div:last-child{min-width:0}.logo{flex:0 0 42px}.status{white-space:nowrap}.iconbtn{flex:0 0 42px}
+.status{display:inline-flex;align-items:center;gap:6px;color:#9ee9d8;font-size:12px}
+.dot{width:7px;height:7px;border-radius:50%;background:#46d9b7;box-shadow:0 0 12px #46d9b7}
+.iconbtn{border:1px solid var(--line);background:rgba(255,255,255,.055);color:var(--text);width:42px;height:42px;border-radius:14px;font-size:18px;transition:.2s}
+.iconbtn:active,.send:active,.suggestion:active{transform:scale(.96)}
+main{flex:1 1 0;min-height:0;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:none}main::-webkit-scrollbar{display:none}
+.welcome{margin:auto 0;display:flex;flex-direction:column;align-items:center;text-align:center;padding:24px 0;animation:fadeup .55s ease both}
+.orb{width:70px;height:70px;border-radius:24px;display:grid;place-items:center;font-size:32px;background:linear-gradient(145deg,#29234f,#142c40);border:1px solid #b7aaff38;box-shadow:0 0 55px #8171ff1c;position:relative}
+.orb:after{content:"";position:absolute;inset:-7px;border-radius:33px;border:1px solid #8b7cff25;animation:pulse 3s ease-in-out infinite}
+h1{font-size:clamp(26px,7vw,42px);line-height:1.15;margin:18px 0 8px;letter-spacing:-1.2px}
+.gradient{background:linear-gradient(100deg,#c7baff,#7fe9dc);-webkit-background-clip:text;background-clip:text;color:transparent}
+.intro{max-width:440px;color:var(--muted);margin:0 0 25px}
+.suggestions{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;max-width:620px}
+.suggestion{border:1px solid var(--line);border-radius:15px;background:rgba(255,255,255,.045);color:#dfe6ff;padding:10px 13px;font-size:13px;transition:.2s}
+.suggestion:hover{border-color:#8b7cff80;background:#8b7cff14}
+.chat{display:flex;flex-direction:column;gap:20px;padding:18px 0 24px}
+.message{display:flex;gap:10px;align-items:flex-start;animation:fadeup .24s ease both}
+.message.user{flex-direction:row-reverse}
+.avatar{flex:0 0 34px;width:34px;height:34px;border-radius:12px;display:grid;place-items:center;font-size:14px;font-weight:800;background:linear-gradient(135deg,#9b8cff,#49e0d0);color:#0b1120}
+.user .avatar{background:#2b3555;color:#dce5ff}
+.bubble{max-width:min(82%,720px);padding:12px 15px;border:1px solid var(--line);border-radius:5px 18px 18px 18px;background:rgba(19,27,47,.88);overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 8px 24px #0000000c}
+.user .bubble{border-radius:18px 5px 18px 18px;background:var(--user)}
+.bubble code{background:#070b15;padding:2px 5px;border-radius:5px;font-family:ui-monospace,monospace}
+.bubble{white-space:normal}.bubble p{margin:0 0 8px;white-space:pre-wrap}.bubble p:last-child{margin:0}.bubble pre{position:relative;white-space:pre;max-width:100%;margin:8px 0;overflow:auto;background:#070b15;border:1px solid var(--line);border-radius:12px;padding:12px}
+.typingdots{display:inline-flex;gap:5px;padding:5px 0}.typingdots i{width:6px;height:6px;border-radius:50%;background:#a99cff;animation:dotbounce 1s infinite}.typingdots i:nth-child(2){animation-delay:.15s}.typingdots i:nth-child(3){animation-delay:.3s}
+.composer-wrap{flex:0 0 auto;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:4}
+.composer{display:flex;align-items:flex-end;gap:9px;padding:9px;border-radius:22px;background:#121a2d;border:1px solid #b8b4ff24;box-shadow:var(--shadow)}
+textarea{flex:1;min-width:0;font-size:16px;resize:none;max-height:160px;min-height:42px;border:0;outline:0;background:transparent;color:var(--text);padding:10px 8px;line-height:1.5}
+textarea::placeholder{color:#7f8cab}
+.send{flex:0 0 44px;width:44px;height:44px;border:0;border-radius:15px;color:#0b1120;font-weight:900;font-size:19px;background:linear-gradient(135deg,#b4a6ff,#5ee6d3);box-shadow:0 6px 18px #8171ff30;transition:.2s}
+.send:disabled{opacity:.5;cursor:wait}
+.foot{text-align:center;font-size:11px;color:#74809d;padding:6px 0 0}
+.overlay{position:fixed;inset:0;background:#030611b8;backdrop-filter:blur(8px);z-index:20;display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.open{display:flex}
+.modal{width:min(100%,450px);border:1px solid var(--line);border-radius:24px;padding:22px;background:#11192c;box-shadow:0 25px 90px #0008;animation:fadeup .2s ease}
+.modalhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.modal h2{margin:0;font-size:21px}
+.field{display:flex;flex-direction:column;gap:7px;margin:14px 0}.field label{font-size:13px;color:#c2cbe1}
+.field input{width:100%;border:1px solid var(--line);border-radius:12px;background:#080e1c;color:var(--text);padding:12px;outline:none}
+.field input:focus{border-color:#8b7cff}
+.note{font-size:12px;color:var(--muted);line-height:1.5}
+.modalactions{display:flex;gap:9px;margin-top:18px}.primary,.secondary{flex:1;padding:11px 13px;border-radius:12px;border:1px solid var(--line);font-weight:700}.primary{background:linear-gradient(135deg,#a89aff,#58ddce);color:#09111f;border:0}.secondary{background:#202942;color:#e9edff}
+.copy{position:sticky;float:right;top:0;margin:-4px -4px 0 6px;border:1px solid var(--line);background:#1b2540;color:#dfe6ff;border-radius:8px;padding:3px 9px;font-size:12px}
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#1d2941;border:1px solid var(--line);padding:10px 15px;border-radius:12px;color:#f4f7ff;z-index:30;display:none;max-width:90%;font-size:13px}
+@keyframes fadeup{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:.45}50%{transform:scale(1.07);opacity:1}}
+@keyframes dotbounce{0%,60%,100%{transform:translateY(0);opacity:.45}30%{transform:translateY(-5px);opacity:1}}
+@media(max-width:480px){.sub,.status{display:none}.app{padding-left:12px;padding-right:12px}}
+@media(min-width:700px){.app{padding:0 28px}.topbar{padding-top:20px}.welcome{padding-top:55px}.bubble{font-size:15px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">M</div>
+      <div><div class="brandname">MINIK AI</div><div class="sub">Sənin ağıllı köməkçin</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span class="status"><span class="dot"></span> Hazırdır</span>
+      <button class="iconbtn" id="settingsBtn" aria-label="Parametrlər" title="Parametrlər"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5h0a1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+  </header>
 
+  <main>
+    <section class="welcome" id="welcome">
+      <div class="orb"><svg viewBox="0 0 24 24" fill="#e9e4ff"><path d="M12 2c.6 4.6 2.2 7.4 5 9 .8.4 1.7.8 5 1-3.300.2-4.200.6-5 1-2.800 1.600-4.400 4.400-5 9-.6-4.600-2.200-7.400-5-9-.8-.4-1.700-.8-5-1 3.300-.2 4.200-.6 5-1 2.800-1.600 4.400-4.400 5-9z"/></svg></div>
+      <h1>Salam! Mən <span class="gradient">MINIK AI</span></h1>
+      <p class="intro">Nə öyrənmək, yaratmaq və ya həll etmək istəyirsən? Birlikdə başlayaq.</p>
+      <div class="suggestions">
+        <button class="suggestion">Mənə HTML oyunu yaz</button>
+        <button class="suggestion">Python-u sadə izah et</button>
+        <button class="suggestion">Maraqlı bir fakt de</button>
+      </div>
+    </section>
+    <section class="chat" id="chat" aria-live="polite"></section>
+  </main>
+
+  <div class="composer-wrap">
+    <form class="composer" id="composer">
+      <textarea id="prompt" rows="1" placeholder="MINIK AI-yə mesaj yaz..." aria-label="Mesaj"></textarea>
+      <button class="send" id="sendBtn" type="submit" aria-label="Göndər"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.600 3.300 10l12 2-12 2z"/></svg></button>
+    </form>
+    <div class="foot">MINIK AI səhv edə bilər — vacib məlumatları yoxla.</div>
+  </div>
+</div>
+
+<div class="overlay" id="settingsOverlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal">
+    <div class="modalhead"><h2 id="settingsTitle">MINIK AI parametrləri</h2><button class="iconbtn" id="closeSettings" aria-label="Bağla"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+    <div class="field"><label for="apiKey">Gemini API açarı</label><input id="apiKey" type="password" autocomplete="off" placeholder="AIza..."></div>
+    <div class="field"><label for="modelName">Gemini modeli</label><input id="modelName" value="gemini-2.5-flash" autocomplete="off"></div>
+    <p class="note">Açar bu brauzerin yaddaşında saxlanır, amma bu, tam təhlükəsiz saxlama üsulu deyil. Bu saytı ictimai yayımlayırsansa, başqaları brauzerdəki açara çıxış tapa bilər. API açarını heç kimlə paylaşma; istəsən Google AI Studio-dan yeni açar yarada bilərsən.</p>
+    <div class="modalactions"><button class="secondary" id="clearChat" type="button">Söhbəti sil</button><button class="primary" id="saveSettings" type="button">Yadda saxla</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const chat = $('chat'), welcome = $('welcome'), prompt = $('prompt');
+  const sendBtn = $('sendBtn'), overlay = $('settingsOverlay'), toastBox = $('toast');
+  const main = document.querySelector('main');
+  const toBottom = () => requestAnimationFrame(() => { main.scrollTop = main.scrollHeight; });
+  let history = [], busy = false, toastTimer;
+
+  const savedKey = localStorage.getItem('minik_api_key') || '';
+  let savedModel = localStorage.getItem('minik_model') || 'gemini-2.5-flash';
+  if(savedModel.includes('3.8')) savedModel = 'gemini-2.5-flash';
+  $('apiKey').value = savedKey;
+  $('modelName').value = savedModel;
+
+  function toast(message) {
+    toastBox.textContent = message;
+    toastBox.style.display = 'block';
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastBox.style.display = 'none', 2800);
+  }
+  function openSettings(){ overlay.classList.add('open'); }
+  function closeSettings(){ overlay.classList.remove('open'); }
+  $('settingsBtn').addEventListener('click', openSettings);
+  $('closeSettings').addEventListener('click', closeSettings);
+  overlay.addEventListener('click', e => { if(e.target === overlay) closeSettings(); });
+  $('saveSettings').addEventListener('click', () => {
+    const key = $('apiKey').value.trim();
+    const model = $('modelName').value.trim() || 'gemini-2.5-flash';
+    if(!key){ toast('Əvvəl Gemini API açarını daxil et.'); return; }
+    localStorage.setItem('minik_api_key', key);
+    localStorage.setItem('minik_model', model);
+    closeSettings(); toast('Parametrlər yadda saxlanıldı.');
+  });
+  $('clearChat').addEventListener('click', () => {
+    history = []; chat.innerHTML = ''; welcome.style.display = ''; closeSettings(); toast('Söhbət təmizləndi.');
+  });
+
+  function addMessage(role, text, typing=false) {
+    welcome.style.display = 'none';
+    const row = document.createElement('div');
+    row.className = 'message ' + (role === 'user' ? 'user' : 'assistant');
+    const avatar = document.createElement('div');
+    avatar.className = 'avatar'; avatar.textContent = role === 'user' ? 'S' : 'M';
+    const bubble = document.createElement('div'); bubble.className = 'bubble';
+    if(typing) {
+      bubble.innerHTML = '<span class="typingdots"><i></i><i></i><i></i></span>';
+    } else bubble.textContent = text;
+    row.append(avatar,bubble); chat.append(row);
+    toBottom();
+    return bubble;
+  }
+
+  function render(bubble, text) {
+    bubble.textContent = '';
+    text.split(/(```[\s\S]*?(?:```|$))/g).forEach(part => {
+      if(!part) return;
+      if(part.startsWith('```')) {
+        const code = part.replace(/^```[^\n]*\n?/, '').replace(/```$/, '');
+        const pre = document.createElement('pre'), btn = document.createElement('button');
+        btn.className = 'copy'; btn.type = 'button'; btn.textContent = 'Kopyala';
+        btn.onclick = () => { (navigator.clipboard?.writeText(code) || Promise.reject()).then(() => toast('Kopyalandı.')).catch(() => toast('Kopyalamaq alınmadı.')); };
+        pre.append(btn, document.createTextNode(code.replace(/\n$/, '')));
+        bubble.append(pre);
+      } else {
+        const p = document.createElement('p');
+        part.trim().split(/(`[^`\n]+`)/g).forEach(s => {
+          if(/^`[^`]+`$/.test(s)) { const c = document.createElement('code'); c.textContent = s.slice(1,-1); p.append(c); }
+          else p.append(document.createTextNode(s));
+        });
+        if(part.trim()) bubble.append(p);
+      }
+    });
+  }
+
+  function showTextFast(bubble, text) {
+    // Hər dəfə çoxlu simvol əlavə edir ki, uzun cavablar da sürətlə görünsün.
+    bubble.textContent = '';
+    let index = 0;
+    const step = Math.max(4, Math.ceil(text.length / 180));
+    function tick(){
+      index = Math.min(text.length, index + step);
+      if(index < text.length) { bubble.textContent = text.slice(0,index); bubble.style.whiteSpace = 'pre-wrap'; toBottom(); requestAnimationFrame(tick); }
+      else { bubble.style.whiteSpace = ''; render(bubble, text); toBottom(); }
+    }
+    tick();
+  }
+
+  async function requestGemini(key, model, contents) {
+    const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent';
+    const payload = {
+      systemInstruction: {parts:[{text:'Sən MINIK AI adlı faydalı, mehriban və dəqiq köməkçisən. İstifadəçinin dilində cavab ver, Azərbaycan dilinə üstünlük ver. Aydın və faydalı ol. Bilmədiyini uydurma. Kod istənəndə işlək və tam kod ver.'}]},
+      contents,
+      generationConfig: {}
+    };
+    for(let attempt=0; attempt<3; attempt++){
+      let response;
+      try {
+        response = await fetch(url, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-goog-api-key':key},
+          body:JSON.stringify(payload)
+        });
+      } catch(err) {
+        if(attempt===2) throw new Error('İnternet bağlantısı alınmadı. İnterneti yoxlayıb yenidən cəhd et.');
+        await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
+        continue;
+      }
+      if(response.ok) return response.json();
+      const data = await response.json().catch(()=>({}));
+      const message = data.error?.message || ('Sorğu uğursuz oldu ('+response.status+').');
+      if([429,500,502,503,504].includes(response.status) && attempt<2){
+        await new Promise(resolve=>setTimeout(resolve,700*Math.pow(2,attempt)));
+        continue;
+      }
+      if(response.status===400 || response.status===401 || response.status===403) {
+        throw new Error(message + ' API açarını və model adını parametrlərdən yoxla.');
+      }
+      throw new Error(message);
+    }
+    throw new Error('Cavab alınmadı. Bir az sonra yenidən yoxla.');
+  }
+
+  async function sendMessage(text) {
+    text = text.trim();
+    if(!text || busy) return;
+    const key = localStorage.getItem('minik_api_key') || '';
+    let model = localStorage.getItem('minik_model') || 'gemini-2.5-flash';
+    if(model.includes('3.8')) model = 'gemini-2.5-flash';
+    if(!key){ openSettings(); toast('İşlətmək üçün Gemini API açarı lazımdır.'); return; }
+    busy = true; sendBtn.disabled = true; prompt.disabled = true;
+    addMessage('user',text);
+    history.push({role:'user',parts:[{text}]});
+    const bubble = addMessage('assistant','',true);
+    try {
+      const data = await requestGemini(key,model,history);
+      const answer = (data.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim();
+      if(!answer) throw new Error('Boş cavab alındı. Model adını yoxla və yenidən cəhd et.');
+      history.push({role:'model',parts:[{text:answer}]});
+      showTextFast(bubble,answer);
+    } catch(err) {
+      bubble.textContent = 'Bağlantı xətası: ' + (err?.message || 'Naməlum xəta');
+      history.pop();
+    } finally {
+      busy = false; sendBtn.disabled = false; prompt.disabled = false; prompt.focus();
+    }
+  }
+
+  $('composer').addEventListener('submit', e => {
+    e.preventDefault();
+    const text = prompt.value; prompt.value=''; prompt.style.height='auto';
+    sendMessage(text);
+  });
+  sendBtn.addEventListener('pointerdown', e => e.preventDefault());
+  prompt.addEventListener('input', () => {
+    prompt.style.height='auto';
+    prompt.style.height=Math.min(prompt.scrollHeight,160)+'px';
+  });
+  prompt.addEventListener('keydown', e => {
+    if(e.key==='Enter' && !e.shiftKey && !matchMedia('(pointer:coarse)').matches){e.preventDefault();$('composer').requestSubmit();}
+  });
+  prompt.addEventListener('focus', () => setTimeout(toBottom, 300));
+  if(window.visualViewport) visualViewport.addEventListener('resize', toBottom);
+  document.querySelectorAll('.suggestion').forEach(button => button.addEventListener('click', () => {
+    prompt.value = button.textContent; $('composer').requestSubmit();
+  }));
+})();
+</script>
+</body>
+</html>
