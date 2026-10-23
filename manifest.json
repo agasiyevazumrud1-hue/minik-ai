@@ -16,5 +16,15 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "id": "./",
+  "screenshots": [
+    {
+      "src": "./screenshot.svg",
+      "sizes": "900x1600",
+      "type": "image/svg+xml",
+      "form_factor": "narrow",
+      "label": "MINIK AI söhbət ekranı"
+    }
   ]
 }
