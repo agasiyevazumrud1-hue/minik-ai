@@ -1,0 +1,20 @@
+{
+  "name": "MINIK AI",
+  "short_name": "MINIK AI",
+  "description": "MINIK AI — Azərbaycan dilində danışan ağıllı şəxsi köməkçi.",
+  "lang": "az",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#080d1c",
+  "theme_color": "#0b1020",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
