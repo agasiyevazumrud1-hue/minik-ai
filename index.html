@@ -128,7 +128,8 @@ textarea::placeholder{color:#7f8cab}
   const sendBtn = $('sendBtn'), overlay = $('settingsOverlay'), toastBox = $('toast');
   const main = document.querySelector('main');
   const toBottom = () => requestAnimationFrame(() => { main.scrollTop = main.scrollHeight; });
-  let history = [], busy = false, toastTimer;
+  let history = [];
+  try { history = JSON.parse(localStorage.getItem('minik_chat_history') || '[]'); if(!Array.isArray(history)) history = []; } catch { history = []; }\n  let busy = false, toastTimer;
 
   const savedKey = localStorage.getItem('minik_api_key') || '';
   let savedModel = localStorage.getItem('minik_model') || 'gemini-2.5-flash';
@@ -156,7 +157,7 @@ textarea::placeholder{color:#7f8cab}
     closeSettings(); toast('Parametrlər yadda saxlanıldı.');
   });
   $('clearChat').addEventListener('click', () => {
-    history = []; chat.innerHTML = ''; welcome.style.display = ''; closeSettings(); toast('Söhbət təmizləndi.');
+    history = []; localStorage.removeItem('minik_chat_history'); chat.innerHTML = ''; welcome.style.display = ''; closeSettings(); toast('Söhbət təmizləndi.');
   });
 
   function addMessage(role, text, typing=false) {
@@ -173,6 +174,13 @@ textarea::placeholder{color:#7f8cab}
     toBottom();
     return bubble;
   }
+
+  // Əvvəlki söhbəti bərpa et
+  history.forEach(item => {
+    const text = item?.parts?.map(p => p.text || '').join('') || '';
+    if(text && (item.role === 'user' || item.role === 'model')) addMessage(item.role === 'user' ? 'user' : 'assistant', text);
+  });
+  if(history.length) welcome.style.display = 'none';
 
   function render(bubble, text) {
     bubble.textContent = '';
@@ -254,16 +262,19 @@ textarea::placeholder{color:#7f8cab}
     busy = true; sendBtn.disabled = true; prompt.disabled = true;
     addMessage('user',text);
     history.push({role:'user',parts:[{text}]});
+    localStorage.setItem('minik_chat_history', JSON.stringify(history));
     const bubble = addMessage('assistant','',true);
     try {
       const data = await requestGemini(key,model,history);
       const answer = (data.candidates?.[0]?.content?.parts || []).map(p=>p.text || '').join('').trim();
       if(!answer) throw new Error('Boş cavab alındı. Model adını yoxla və yenidən cəhd et.');
       history.push({role:'model',parts:[{text:answer}]});
+      localStorage.setItem('minik_chat_history', JSON.stringify(history));
       showTextFast(bubble,answer);
     } catch(err) {
       bubble.textContent = 'Bağlantı xətası: ' + (err?.message || 'Naməlum xəta');
       history.pop();
+      localStorage.setItem('minik_chat_history', JSON.stringify(history));
     } finally {
       busy = false; sendBtn.disabled = false; prompt.disabled = false; prompt.focus();
     }
