@@ -225,7 +225,14 @@ textarea::placeholder{color:#7f8cab}
       .trim();
   }
 
-  function speakAnswer(text) {
+  let currentSpeakButton = null;
+  function stopSpeaking() {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (currentSpeakButton) currentSpeakButton.textContent = '🔊 Təbii səslə dinlə';
+    currentSpeakButton = null;
+  }
+
+  function speakAnswer(text, button = null) {
     if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
       toast('Səsləndirmə bu brauzerdə dəstəklənmir.'); return;
     }
@@ -233,13 +240,41 @@ textarea::placeholder{color:#7f8cab}
     if (!spokenText) return;
     try {
       window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(spokenText);
+      currentSpeakButton = button;
+      if (button) button.textContent = '⏹️ Dayandır';
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => /^az([_-]|$)/i.test(v.lang)) || voices.find(v => /^tr([_-]|$)/i.test(v.lang)) || voices.find(v => /^en([_-]|$)/i.test(v.lang));
-      utterance.lang = voice?.lang || 'az-AZ';
-      if (voice) utterance.voice = voice;
-      utterance.rate = 0.96; utterance.pitch = 1.02;
-      window.speechSynthesis.speak(utterance);
+      // Prefer installed, higher-quality Turkish voices for Azerbaijani text.
+      const voice = voices.find(v => /^tr([_-]|$)/i.test(v.lang) && /google|online|natural|neural/i.test(v.name)) ||
+                    voices.find(v => /^az([_-]|$)/i.test(v.lang)) ||
+                    voices.find(v => /^tr([_-]|$)/i.test(v.lang)) ||
+                    voices.find(v => /^en([_-]|$)/i.test(v.lang));
+      const chunks = spokenText.match(/[^.!?;:\n]+[.!?;:]*/g) || [spokenText];
+      const queue = [];
+      let part = '';
+      for (const sentence of chunks) {
+        const next = (part ? ' ' : '') + sentence.trim();
+        if ((part + next).length > 220 && part) { queue.push(part.trim()); part = sentence.trim(); }
+        else part += next;
+      }
+      if (part.trim()) queue.push(part.trim());
+      let index = 0;
+      const sayNext = () => {
+        if (index >= queue.length) {
+          if (currentSpeakButton === button && button) button.textContent = '🔊 Təbii səslə dinlə';
+          if (currentSpeakButton === button) currentSpeakButton = null;
+          return;
+        }
+        const utterance = new SpeechSynthesisUtterance(queue[index++]);
+        utterance.lang = voice?.lang || 'tr-TR';
+        if (voice) utterance.voice = voice;
+        utterance.rate = 0.90;
+        utterance.pitch = 1.0;
+        utterance.volume = 1;
+        utterance.onend = sayNext;
+        utterance.onerror = () => { if (currentSpeakButton === button && button) button.textContent = '🔊 Təbii səslə dinlə'; currentSpeakButton = null; };
+        window.speechSynthesis.speak(utterance);
+      };
+      sayNext();
     } catch { toast('Səsləndirmə alınmadı.'); }
   }
 
@@ -247,18 +282,16 @@ textarea::placeholder{color:#7f8cab}
     if (!text || bubble.querySelector('.speak-message')) return;
     const button = document.createElement('button');
     button.type = 'button'; button.className = 'speak-message';
-    button.textContent = '🔊 Səslə dinlə';
+    button.textContent = '🔊 Təbii səslə dinlə';
     button.addEventListener('click', () => {
-      if (window.speechSynthesis?.speaking) { window.speechSynthesis.cancel(); button.textContent = '🔊 Səslə dinlə'; return; }
-      speakAnswer(text); button.textContent = '⏹️ Dayandır';
-      if ('speechSynthesis' in window) {
-        const check = () => { if (!window.speechSynthesis.speaking) button.textContent = '🔊 Səslə dinlə'; else setTimeout(check, 300); };
-        setTimeout(check, 500);
+      if (currentSpeakButton === button || window.speechSynthesis?.speaking) {
+        stopSpeaking(); return;
       }
+      stopSpeaking();
+      speakAnswer(text, button);
     });
     bubble.append(document.createElement('br'), button);
   }
-
   voiceBtn.addEventListener('click', () => {
     if (!SpeechRecognitionAPI) {
       toast('Səs tanıma bu brauzerdə dəstəklənmir. Chrome-da aç.');
