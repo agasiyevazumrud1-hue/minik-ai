@@ -53,6 +53,7 @@ textarea{flex:1;min-width:0;font-size:16px;resize:none;max-height:160px;min-heig
 textarea::placeholder{color:#7f8cab}
 .send{flex:0 0 44px;width:44px;height:44px;border:0;border-radius:15px;color:#0b1120;font-weight:900;font-size:19px;background:linear-gradient(135deg,#b4a6ff,#5ee6d3);box-shadow:0 6px 18px #8171ff30;transition:.2s}
 .send:disabled{opacity:.5;cursor:wait}
+.voice-btn{flex:0 0 44px;width:44px;height:44px;border:1px solid var(--line);border-radius:15px;background:#202942;color:var(--text);font-size:20px;transition:.2s}.voice-btn.listening{background:linear-gradient(135deg,#ff7b91,#ffb26b);color:#24101a;box-shadow:0 0 0 5px #ff7b9126;animation:pulse 1.2s ease-in-out infinite}.voice-btn:disabled{opacity:.45}
 .foot{text-align:center;font-size:11px;color:#74809d;padding:6px 0 0}
 .overlay{position:fixed;inset:0;background:#030611b8;backdrop-filter:blur(8px);z-index:20;display:none;align-items:center;justify-content:center;padding:18px}
 .overlay.open{display:flex}
@@ -113,6 +114,7 @@ textarea::placeholder{color:#7f8cab}
     <button class="tools-trigger" id="openTools" type="button">✦ 100 AI özəlliyi və alətlər</button>
     <form class="composer" id="composer">
       <textarea id="prompt" rows="1" placeholder="MINIK AI-yə mesaj yaz..." aria-label="Mesaj"></textarea>
+      <button class="voice-btn" id="voiceBtn" type="button" aria-label="Səsli söhbəti başlat" title="Səsli söhbət">🎙️</button>
       <button class="send" id="sendBtn" type="submit" aria-label="Göndər"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.600 3.300 10l12 2-12 2z"/></svg></button>
     </form>
     <div class="foot">MINIK AI səhv edə bilər — vacib məlumatları yoxla.</div>
@@ -145,6 +147,7 @@ textarea::placeholder{color:#7f8cab}
   const $ = id => document.getElementById(id);
   const chat = $('chat'), welcome = $('welcome'), prompt = $('prompt');
   const sendBtn = $('sendBtn'), overlay = $('settingsOverlay'), toastBox = $('toast');
+  const voiceBtn = $('voiceBtn');
   const toolsOverlay = $('toolsOverlay');
   const main = document.querySelector('main');
   const toBottom = () => requestAnimationFrame(() => { main.scrollTop = main.scrollHeight; });
@@ -164,6 +167,112 @@ textarea::placeholder{color:#7f8cab}
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toastBox.style.display = 'none', 2800);
   }
+
+  // Səsli söhbət: brauzerin nitq tanıma və səsləndirmə imkanlarından istifadə edir.
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let voiceMode = false, recognition = null, speaking = false;
+
+  function setVoiceButtonState() {
+    voiceBtn.classList.toggle('listening', voiceMode);
+    voiceBtn.setAttribute('aria-pressed', String(voiceMode));
+    voiceBtn.setAttribute('aria-label', voiceMode ? 'Səsli söhbəti dayandır' : 'Səsli söhbəti başlat');
+    voiceBtn.title = voiceMode ? 'Səsli söhbəti dayandır' : 'Səsli söhbət';
+  }
+
+  function startVoiceListening() {
+    if (!voiceMode || busy || speaking || !SpeechRecognitionAPI) return;
+    try {
+      if (recognition) { try { recognition.onend = null; recognition.stop(); } catch {} }
+      recognition = new SpeechRecognitionAPI();
+      recognition.lang = 'az-AZ';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+      recognition.onstart = () => toast('Dinləyirəm... danışa bilərsən 🎙️');
+      recognition.onresult = event => {
+        const spoken = Array.from(event.results || []).map(result => result[0]?.transcript || '').join(' ').trim();
+        if (!spoken || !voiceMode) return;
+        prompt.value = '';
+        prompt.style.height = 'auto';
+        sendMessage(spoken);
+      };
+      recognition.onerror = event => {
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          voiceMode = false; setVoiceButtonState();
+          toast('Mikrofona icazə ver və yenidən yoxla.');
+        } else if (event.error !== 'no-speech' && event.error !== 'aborted') {
+          toast('Səs tanınmadı. Yenidən danış.');
+        }
+      };
+      recognition.onend = () => {
+        if (voiceMode && !busy && !speaking) setTimeout(() => { if (voiceMode && !busy && !speaking) startVoiceListening(); }, 350);
+      };
+      recognition.start();
+    } catch (err) {
+      toast('Mikrofonu başlatmaq alınmadı. Chrome-da aç və mikrofona icazə ver.');
+    }
+  }
+
+  function plainTextForSpeech(text) {
+    const fence = String.fromCharCode(96).repeat(3);
+    return String(text || '')
+      .replace(new RegExp(fence + '[\\s\\S]*?' + fence, 'g'), 'Kod nümunəsi verilib.')
+      .replace(new RegExp(String.fromCharCode(96) + '([^' + String.fromCharCode(96) + ']+)' + String.fromCharCode(96), 'g'), '$1')
+      .replace(/https?:\/\/\S+/g, 'link')
+      .replace(/[*_~#>|]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function speakAnswer(text) {
+    if (!voiceMode || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+    const spokenText = plainTextForSpeech(text);
+    if (!spokenText) return;
+    try {
+      window.speechSynthesis.cancel();
+      speaking = true;
+      const utterance = new SpeechSynthesisUtterance(spokenText);
+      const voices = window.speechSynthesis.getVoices();
+      const voice = voices.find(v => /^az([_-]|$)/i.test(v.lang)) ||
+                    voices.find(v => /^tr([_-]|$)/i.test(v.lang)) ||
+                    voices.find(v => /^en([_-]|$)/i.test(v.lang));
+      utterance.lang = voice?.lang || 'az-AZ';
+      if (voice) utterance.voice = voice;
+      utterance.rate = 0.96;
+      utterance.pitch = 1.02;
+      const resumeListening = () => {
+        speaking = false;
+        if (voiceMode && !busy) setTimeout(startVoiceListening, 400);
+      };
+      utterance.onend = resumeListening;
+      utterance.onerror = resumeListening;
+      window.speechSynthesis.speak(utterance);
+    } catch {
+      speaking = false;
+      toast('Səsli cavab bu brauzerdə işləmədi.');
+    }
+  }
+
+  voiceBtn.addEventListener('click', () => {
+    if (!SpeechRecognitionAPI) {
+      toast('Səs tanıma bu brauzerdə dəstəklənmir. Chrome-da aç.');
+      return;
+    }
+    if (voiceMode) {
+      voiceMode = false;
+      try { if (recognition) recognition.stop(); } catch {}
+      try { window.speechSynthesis.cancel(); } catch {}
+      speaking = false;
+      setVoiceButtonState();
+      toast('Səsli söhbət dayandırıldı.');
+    } else {
+      voiceMode = true;
+      setVoiceButtonState();
+      startVoiceListening();
+      toast('Səsli söhbət aktivdir. Danışmağa başla.');
+    }
+  });
+  setVoiceButtonState();
 
   const quickTools = [{"name":"HTML/CSS sayt yarat","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: HTML/CSS sayt yarat. Sadə, faydalı və addım-addım cavab ver."},{"name":"JavaScript kodu yaz","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: JavaScript kodu yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Python nümunəsi yaz","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: Python nümunəsi yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Kodu addım-addım izah et","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: Kodu addım-addım izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Kod səhvini tap","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: Kod səhvini tap. Sadə, faydalı və addım-addım cavab ver."},{"name":"CSS dizaynı düzəlt","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: CSS dizaynı düzəlt. Sadə, faydalı və addım-addım cavab ver."},{"name":"SQL sorğusu yaz","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: SQL sorğusu yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"API anlayışını izah et","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: API anlayışını izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Godot oyun mexanikası qur","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: Godot oyun mexanikası qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"GitHub xətasını həll et","cat":"Kod və proqramlaşdırma","prompt":"Mənə bu işdə kömək et: GitHub xətasını həll et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Dərs planı hazırla","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Dərs planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"İş vərəqi hazırla","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: İş vərəqi hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"10 test sualı düzəlt","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: 10 test sualı düzəlt. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mövzunu uşaq dilində izah et","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Mövzunu uşaq dilində izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Riyaziyyat məsələsini həll et","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Riyaziyyat məsələsini həll et. Sadə, faydalı və addım-addım cavab ver."},{"name":"İngilis dili dərsi keç","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: İngilis dili dərsi keç. Sadə, faydalı və addım-addım cavab ver."},{"name":"Sinif oyunu təklif et","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Sinif oyunu təklif et. Sadə, faydalı və addım-addım cavab ver."},{"name":"İnşa planı hazırla","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: İnşa planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Sözlərin mənasını izah et","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Sözlərin mənasını izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Qiymətləndirmə meyarı hazırla","cat":"Təhsil və müəllim","prompt":"Mənə bu işdə kömək et: Qiymətləndirmə meyarı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mətni tərcümə et","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Mətni tərcümə et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Qrammatikanı düzəlt","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Qrammatikanı düzəlt. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mətni qısalt","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Mətni qısalt. Sadə, faydalı və addım-addım cavab ver."},{"name":"Ətraflı xülasə çıxar","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Ətraflı xülasə çıxar. Sadə, faydalı və addım-addım cavab ver."},{"name":"Şeir yaz","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Şeir yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Hekayə yaz","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Hekayə yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Məktub hazırla","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Məktub hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Təbrik mesajı yaz","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Təbrik mesajı yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Sosial paylaşım yaz","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Sosial paylaşım yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mətni peşəkarlaşdır","cat":"Yazı və dil","prompt":"Mənə bu işdə kömək et: Mətni peşəkarlaşdır. Sadə, faydalı və addım-addım cavab ver."},{"name":"Oyun ideyası ver","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Oyun ideyası ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Logo konsepti qur","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Logo konsepti qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mahnı mətni yaz","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Mahnı mətni yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Video ssenarisi yaz","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Video ssenarisi yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"YouTube planı hazırla","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: YouTube planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Ad təklif et","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Ad təklif et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Şəkil üçün təsvir yaz","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Şəkil üçün təsvir yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Reklam mətni yaz","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Reklam mətni yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Komiks ideyası qur","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Komiks ideyası qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Yaradıcı tapmaca düzəlt","cat":"Yaradıcılıq","prompt":"Mənə bu işdə kömək et: Yaradıcı tapmaca düzəlt. Sadə, faydalı və addım-addım cavab ver."},{"name":"Günlük plan qur","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Günlük plan qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Həftəlik plan qur","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Həftəlik plan qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Hədəf planı hazırla","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Hədəf planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"İşləri prioritetləşdir","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: İşləri prioritetləşdir. Sadə, faydalı və addım-addım cavab ver."},{"name":"Büdcə planı qur","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Büdcə planı qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Səyahət planı hazırla","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Səyahət planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Alış-veriş siyahısı yaz","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Alış-veriş siyahısı yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Təmizlik cədvəli qur","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Təmizlik cədvəli qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Tədbir planı hazırla","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Tədbir planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Vaxt idarəetməsini izah et","cat":"Planlaşdırma","prompt":"Mənə bu işdə kömək et: Vaxt idarəetməsini izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Maraqlı fakt danış","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Maraqlı fakt danış. Sadə, faydalı və addım-addım cavab ver."},{"name":"Tarixi hadisəni izah et","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Tarixi hadisəni izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Kosmosu izah et","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Kosmosu izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Elmi anlayışı sadələşdir","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Elmi anlayışı sadələşdir. Sadə, faydalı və addım-addım cavab ver."},{"name":"Təbiət hadisəsini izah et","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Təbiət hadisəsini izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Ekologiya məsləhəti ver","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Ekologiya məsləhəti ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"İddianı necə yoxlamağı izah et","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: İddianı necə yoxlamağı izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Lehinə və əleyhinə arqument yaz","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Lehinə və əleyhinə arqument yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Məlumatı təhlil et","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Məlumatı təhlil et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Müqayisə cədvəli qur","cat":"Elm və məlumat","prompt":"Mənə bu işdə kömək et: Müqayisə cədvəli qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Sadə resept təklif et","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Sadə resept təklif et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Həftəlik menyu hazırla","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Həftəlik menyu hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Bağçılıq məsləhəti ver","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Bağçılıq məsləhəti ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Evdə səliqə planı qur","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Evdə səliqə planı qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Hədiyyə ideyaları ver","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Hədiyyə ideyaları ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Ad günü planı qur","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Ad günü planı qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Kitab tövsiyə et","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Kitab tövsiyə et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Film seçməyə kömək et","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Film seçməyə kömək et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Foto ideyaları ver","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Foto ideyaları ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Sərfəli alış variantlarını müqayisə et","cat":"Gündəlik həyat","prompt":"Mənə bu işdə kömək et: Sərfəli alış variantlarını müqayisə et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Mənə quiz ver","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Mənə quiz ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Məntiq tapmacası ver","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Məntiq tapmacası ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"İngiliscə dialoq apar","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: İngiliscə dialoq apar. Sadə, faydalı və addım-addım cavab ver."},{"name":"İş müsahibəsi məşqi et","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: İş müsahibəsi məşqi et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Debat apar","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Debat apar. Sadə, faydalı və addım-addım cavab ver."},{"name":"Şahmat strategiyası öyrət","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Şahmat strategiyası öyrət. Sadə, faydalı və addım-addım cavab ver."},{"name":"Yeni sözlər öyrət","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Yeni sözlər öyrət. Sadə, faydalı və addım-addım cavab ver."},{"name":"Məni sual-cavabla yoxla","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Məni sual-cavabla yoxla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Addım-addım öyrət","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Addım-addım öyrət. Sadə, faydalı və addım-addım cavab ver."},{"name":"Biliklərimi təkrar etdir","cat":"Öyrənmə və məşq","prompt":"Mənə bu işdə kömək et: Biliklərimi təkrar etdir. Sadə, faydalı və addım-addım cavab ver."},{"name":"Həkimə suallar hazırla","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Həkimə suallar hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Ümumi sağlamlıq məlumatı ver","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Ümumi sağlamlıq məlumatı ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Rahatlama məşqi apar","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Rahatlama məşqi apar. Sadə, faydalı və addım-addım cavab ver."},{"name":"Yuxu vərdişləri barədə danış","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Yuxu vərdişləri barədə danış. Sadə, faydalı və addım-addım cavab ver."},{"name":"Balanslı qidalanmanı izah et","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Balanslı qidalanmanı izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Gündəlik hərəkət planı təklif et","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Gündəlik hərəkət planı təklif et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Stressi idarə etmə yolları ver","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Stressi idarə etmə yolları ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Suallarımı həkimə hazırlamağa kömək et","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Suallarımı həkimə hazırlamağa kömək et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Vərdiş izləmə planı qur","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Vərdiş izləmə planı qur. Sadə, faydalı və addım-addım cavab ver."},{"name":"Özünüqiymətləndirmə sualları ver","cat":"Sağlamlıq və rahatlıq","prompt":"Mənə bu işdə kömək et: Özünüqiymətləndirmə sualları ver. Sadə, faydalı və addım-addım cavab ver."},{"name":"Windows problemini araşdır","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Windows problemini araşdır. Sadə, faydalı və addım-addım cavab ver."},{"name":"Android problemini araşdır","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Android problemini araşdır. Sadə, faydalı və addım-addım cavab ver."},{"name":"Şəbəkə xətasını izah et","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Şəbəkə xətasını izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Kibertəhlükəsizlik siyahısı hazırla","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Kibertəhlükəsizlik siyahısı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Güclü parol qaydasını izah et","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Güclü parol qaydasını izah et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Excel formulu yaz","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Excel formulu yaz. Sadə, faydalı və addım-addım cavab ver."},{"name":"Təqdimat planı hazırla","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Təqdimat planı hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"CV şablonu hazırla","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: CV şablonu hazırla. Sadə, faydalı və addım-addım cavab ver."},{"name":"Məhsul xüsusiyyətlərini müqayisə et","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Məhsul xüsusiyyətlərini müqayisə et. Sadə, faydalı və addım-addım cavab ver."},{"name":"Problemi mərhələlərə böl","cat":"Texnologiya və kömək","prompt":"Mənə bu işdə kömək et: Problemi mərhələlərə böl. Sadə, faydalı və addım-addım cavab ver."}];
   function renderQuickTools(filter = '') {
@@ -373,6 +482,7 @@ textarea::placeholder{color:#7f8cab}
       localStorage.setItem('minik_chat_history', JSON.stringify(history));
       renderHistoryList();
       showTextFast(bubble,answer);
+      speakAnswer(answer);
     } catch(err) {
       bubble.textContent = 'Bağlantı xətası: ' + (err?.message || 'Naməlum xəta');
       history.pop();
