@@ -45,6 +45,7 @@ h1{font-size:clamp(26px,7vw,42px);line-height:1.15;margin:18px 0 8px;letter-spac
 .bubble{max-width:min(82%,720px);padding:12px 15px;border:1px solid var(--line);border-radius:5px 18px 18px 18px;background:rgba(19,27,47,.88);overflow-wrap:anywhere;white-space:pre-wrap;box-shadow:0 8px 24px #0000000c}
 .user .bubble{border-radius:18px 5px 18px 18px;background:var(--user)}
 .bubble code{background:#070b15;padding:2px 5px;border-radius:5px;font-family:ui-monospace,monospace}
+.speak-message{display:inline-flex;gap:6px;align-items:center;margin-top:10px;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:#202942;color:var(--text);font-size:12px;line-height:1.2}.speak-message:active{transform:scale(.97)}
 .bubble{white-space:normal}.bubble p{margin:0 0 8px;white-space:pre-wrap}.bubble p:last-child{margin:0}.bubble pre{position:relative;white-space:pre;max-width:100%;margin:8px 0;overflow:auto;background:#070b15;border:1px solid var(--line);border-radius:12px;padding:12px}
 .typingdots{display:inline-flex;gap:5px;padding:5px 0}.typingdots i{width:6px;height:6px;border-radius:50%;background:#a99cff;animation:dotbounce 1s infinite}.typingdots i:nth-child(2){animation-delay:.15s}.typingdots i:nth-child(3){animation-delay:.3s}
 .composer-wrap{flex:0 0 auto;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:4}
@@ -225,32 +226,37 @@ textarea::placeholder{color:#7f8cab}
   }
 
   function speakAnswer(text) {
-    if (!voiceMode || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') return;
+    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+      toast('Səsləndirmə bu brauzerdə dəstəklənmir.'); return;
+    }
     const spokenText = plainTextForSpeech(text);
     if (!spokenText) return;
     try {
       window.speechSynthesis.cancel();
-      speaking = true;
       const utterance = new SpeechSynthesisUtterance(spokenText);
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(v => /^az([_-]|$)/i.test(v.lang)) ||
-                    voices.find(v => /^tr([_-]|$)/i.test(v.lang)) ||
-                    voices.find(v => /^en([_-]|$)/i.test(v.lang));
+      const voice = voices.find(v => /^az([_-]|$)/i.test(v.lang)) || voices.find(v => /^tr([_-]|$)/i.test(v.lang)) || voices.find(v => /^en([_-]|$)/i.test(v.lang));
       utterance.lang = voice?.lang || 'az-AZ';
       if (voice) utterance.voice = voice;
-      utterance.rate = 0.96;
-      utterance.pitch = 1.02;
-      const resumeListening = () => {
-        speaking = false;
-        if (voiceMode && !busy) setTimeout(startVoiceListening, 400);
-      };
-      utterance.onend = resumeListening;
-      utterance.onerror = resumeListening;
+      utterance.rate = 0.96; utterance.pitch = 1.02;
       window.speechSynthesis.speak(utterance);
-    } catch {
-      speaking = false;
-      toast('Səsli cavab bu brauzerdə işləmədi.');
-    }
+    } catch { toast('Səsləndirmə alınmadı.'); }
+  }
+
+  function addSpeakButton(bubble, text) {
+    if (!text || bubble.querySelector('.speak-message')) return;
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'speak-message';
+    button.textContent = '🔊 Səslə dinlə';
+    button.addEventListener('click', () => {
+      if (window.speechSynthesis?.speaking) { window.speechSynthesis.cancel(); button.textContent = '🔊 Səslə dinlə'; return; }
+      speakAnswer(text); button.textContent = '⏹️ Dayandır';
+      if ('speechSynthesis' in window) {
+        const check = () => { if (!window.speechSynthesis.speaking) button.textContent = '🔊 Səslə dinlə'; else setTimeout(check, 300); };
+        setTimeout(check, 500);
+      }
+    });
+    bubble.append(document.createElement('br'), button);
   }
 
   voiceBtn.addEventListener('click', () => {
@@ -340,6 +346,7 @@ textarea::placeholder{color:#7f8cab}
       bubble.innerHTML = '<span class="typingdots"><i></i><i></i><i></i></span>';
     } else bubble.textContent = text;
     row.append(avatar,bubble); chat.append(row);
+    if(role !== 'user' && !typing && text) addSpeakButton(bubble, text);
     toBottom();
     return bubble;
   }
@@ -421,7 +428,7 @@ textarea::placeholder{color:#7f8cab}
     function tick(){
       index = Math.min(text.length, index + step);
       if(index < text.length) { bubble.textContent = text.slice(0,index); bubble.style.whiteSpace = 'pre-wrap'; toBottom(); requestAnimationFrame(tick); }
-      else { bubble.style.whiteSpace = ''; render(bubble, text); toBottom(); }
+      else { bubble.style.whiteSpace = ''; render(bubble, text); addSpeakButton(bubble, text); toBottom(); }
     }
     tick();
   }
@@ -482,7 +489,7 @@ textarea::placeholder{color:#7f8cab}
       localStorage.setItem('minik_chat_history', JSON.stringify(history));
       renderHistoryList();
       showTextFast(bubble,answer);
-      speakAnswer(answer);
+      addSpeakButton(bubble, answer);
     } catch(err) {
       bubble.textContent = 'Bağlantı xətası: ' + (err?.message || 'Naməlum xəta');
       history.pop();
